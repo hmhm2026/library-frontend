@@ -1,0 +1,1470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library: borrow it or keep it</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Besley:ital,wght@0,400..900;1,400..900&family=Figtree:wght@400;500;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+:root{
+  --mist:#EEF2F1; --surface:#FAFCFB; --ink:#12312F; --muted:#55706C; --line:#CFDAD7;
+  --spruce:#1D5A57; --spruce-deep:#133B38; --brass:#B88A3A; --foil:#E7C777;
+  --clay:#A6402D; --sage:#4F8A6A; --paper:#FBF7EC; --plum:#5A3A5E;
+  --display:'Besley',Georgia,'Times New Roman',serif;
+  --text:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --type:'Special Elite','Courier New',monospace;
+  --board:linear-gradient(#2F6D68,#1B4744);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--mist);color:var(--ink);font:400 16px/1.55 var(--text)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--spruce);outline-offset:3px}
+.hero :focus-visible,.p-head :focus-visible{outline-color:var(--foil)}
+h1,h2,h3,h4{margin:0}
+.disp{font-family:var(--display);font-weight:700;letter-spacing:-.005em}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.muted{color:var(--muted)}
+.ic{width:1.15em;height:1.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:-.2em}
+.ic.fill{fill:currentColor}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:10;background:rgba(238,242,241,.97);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.top-in{max-width:1200px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;font:800 1.45rem/1 var(--display);color:var(--ink)}
+.mark{display:block;width:14px;height:28px;background:var(--brass);clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%)}
+.nav{display:flex;gap:2px;margin-left:10px}
+.nav button{display:inline-flex;align-items:center;gap:7px;background:none;border:0;padding:8px 12px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent}
+.nav button:hover{color:var(--ink)}
+.nav button[aria-current=page]{color:var(--ink);border-bottom-color:var(--brass)}
+.grow{flex:1}
+.who{display:inline-flex;align-items:center;gap:8px;font-size:.92rem;color:var(--muted)}
+.role{font-size:.72rem;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--brass);color:#fff}
+.alerts{background:#F6EBCB;border-top:1px solid #E5D5A5}
+.alerts-in{max-width:1200px;margin:0 auto;padding:8px 24px;display:flex;flex-wrap:wrap;gap:6px 22px}
+.alert{display:inline-flex;align-items:center;gap:8px;font-size:.92rem;font-weight:500}
+.alert.late{color:var(--clay)} .alert.soon{color:#7A5A12} .alert.ready{color:#2F6A4A}
+.alert .lnk{background:none;border:0;padding:0;font:inherit;font-weight:700;text-decoration:underline;text-underline-offset:3px;color:inherit}
+.alert .xx{background:none;border:0;padding:2px;color:inherit;opacity:.6;line-height:0}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--spruce);color:#fff;border:1.5px solid var(--spruce);border-radius:10px;padding:9px 18px;font-weight:600;transition:background .15s,transform .1s}
+.btn:hover{background:var(--spruce-deep);border-color:var(--spruce-deep)}
+.btn:active{transform:translateY(1px)}
+.btn.brass{background:var(--foil);border-color:#C9A44D;color:var(--ink)}
+.btn.brass:hover{background:#EFD48E}
+.btn.ghost{background:transparent;color:var(--ink);border-color:#9DB2AE}
+.btn.ghost:hover{background:#E1EAE8}
+.btn.on-dark{background:transparent;color:#fff;border-color:#6F9A95}
+.btn.on-dark:hover{background:rgba(255,255,255,.1)}
+.btn.danger{background:transparent;color:var(--clay);border-color:#D9B0A7}
+.btn.danger:hover{background:#F6E7E3}
+.btn.sm{padding:5px 13px;font-size:.9rem}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.count{display:inline-block;min-width:20px;padding:0 6px;border-radius:10px;background:var(--brass);color:#fff;font-size:.78rem;font-weight:700;text-align:center;line-height:1.5}
+.ib{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:8px;border:1.5px solid #9DB2AE;background:transparent;color:var(--ink)}
+.ib:hover{background:#E1EAE8}
+.ib.danger{color:var(--clay);border-color:#D9B0A7}
+.ib.danger:hover{background:#F6E7E3}
+
+/* covers: cloth-bound, tone on tone, foil frame */
+.cv{position:relative;container-type:inline-size;aspect-ratio:2/3;background:var(--a);color:var(--t);border-radius:3px 8px 8px 3px;overflow:hidden;display:block;text-align:left;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+.cv::before{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.14),rgba(255,255,255,0) 42%,rgba(0,0,0,.16))}
+.cv::after{content:'';position:absolute;z-index:1;pointer-events:none;inset:4.5cqw 4.5cqw 4.5cqw 10cqw;border:1px solid var(--f);opacity:.9}
+.cv .in{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;padding:0 10cqw 11cqw 15cqw}
+.cv .art{position:absolute;inset:0;overflow:hidden}
+.cv .art::before,.cv .art::after{content:'';position:absolute}
+.cv .rule{display:block;width:12cqw;height:2px;background:var(--f);margin-bottom:4.5cqw}
+.cv h3{font:700 9.2cqw/1.1 var(--display);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.cv small{display:block;margin-top:3cqw;font:500 5.8cqw/1.3 var(--text);letter-spacing:.04em;opacity:.92}
+.s0 .art::before{width:76%;aspect-ratio:1;border-radius:50%;background:var(--b);right:-12%;top:-4%;box-shadow:0 0 0 2.2cqw var(--a),0 0 0 2.8cqw var(--f)}
+.s0 .art::after{width:30%;aspect-ratio:1;border-radius:50%;background:var(--c);left:18%;top:38%}
+.s1 .art::before{width:58%;height:44%;left:21%;top:12%;background:var(--b);border-radius:999px 999px 0 0;box-shadow:0 0 0 2cqw var(--a),0 0 0 2.6cqw var(--f)}
+.s1 .art::after{width:26%;aspect-ratio:1;border-radius:50%;background:var(--c);right:14%;top:40%}
+.s2 .art::before{left:0;right:0;top:0;height:42%;background:repeating-linear-gradient(90deg,var(--b) 0 13%,transparent 13% 26%);border-bottom:2px solid var(--f)}
+.s2 .art::after{width:40%;aspect-ratio:1;border-radius:50%;background:var(--c);right:12%;top:24%;box-shadow:0 0 0 1.8cqw var(--a),0 0 0 2.3cqw var(--f)}
+.s3 .art::before{width:68%;aspect-ratio:1;border-radius:50%;border:10cqw solid var(--b);left:20%;top:9%;box-shadow:0 0 0 2cqw var(--a),0 0 0 2.5cqw var(--f)}
+.s3 .art::after{width:18%;aspect-ratio:1;border-radius:50%;background:var(--c);left:45%;top:26%}
+.s4 .art::before{left:0;top:0;width:84%;aspect-ratio:1;background:var(--b);border-radius:0 0 100% 0;box-shadow:0 0 0 2cqw var(--a),0 0 0 2.5cqw var(--f)}
+.s4 .art::after{right:0;top:32%;width:42%;aspect-ratio:1;background:var(--c);clip-path:polygon(100% 0,100% 100%,0 100%)}
+.s5 .art::before{left:18%;top:11%;width:62%;height:36%;background-image:radial-gradient(circle,var(--b) 3cqw,transparent 3.3cqw);background-size:9cqw 9cqw}
+.s5 .art::after{width:34%;aspect-ratio:1;border-radius:50%;background:var(--c);right:12%;top:34%;box-shadow:0 0 0 1.8cqw var(--a),0 0 0 2.3cqw var(--f)}
+.cv.mini{width:48px;border-radius:2px 5px 5px 2px}
+.cv.mini .in,.cv.mini::after{display:none}
+.cv.blank{--a:#D5DFDC;--b:#C3D0CC;--c:#C3D0CC;--f:#B6C5C0;--t:var(--ink)}
+
+/* hero */
+.hero{background:var(--spruce-deep);color:#EAF1EF;border-bottom:4px solid var(--brass)}
+.hero-in{max-width:1200px;margin:0 auto;padding:52px 24px 80px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:44px;align-items:center}
+.hero h1{font:800 clamp(2.7rem,5.6vw,4.6rem)/1.02 var(--display);letter-spacing:-.015em;color:#fff;margin-bottom:20px}
+.hero p{max-width:46ch;color:#BCD0CC;margin:0 0 28px;font-size:1.06rem}
+.hero .btns{display:flex;flex-wrap:wrap;gap:12px}
+.nook{position:relative;justify-self:center;width:min(600px,100%)}
+.nook svg{display:block;width:100%;height:auto;border-radius:16px;border:3px solid #2F6D68;box-shadow:0 30px 50px -28px rgba(0,0,0,.7)}
+
+/* stats & quick access */
+.stats{position:relative;z-index:2;max-width:1200px;margin:-44px auto 0;padding:0 24px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat{display:flex;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 14px 26px -20px rgba(18,49,47,.7)}
+.stat .bx{display:grid;place-items:center;width:46px;height:46px;border-radius:10px;background:#E1EAE8;color:var(--spruce);font-size:1.45rem}
+.stat b{display:block;font:800 1.55rem/1.1 var(--display)}
+.stat span{font-size:.85rem;color:var(--muted)}
+.quick{max-width:1200px;margin:26px auto 0;padding:0 24px}
+.quick h2{font-size:1.15rem;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.qgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.qt{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:14px 16px;border:1.5px solid #B7C8C4;border-radius:12px;background:transparent;transition:background .15s,border-color .15s}
+.qt:hover{background:#E1EAE8;border-color:var(--spruce)}
+.qt .ic{font-size:1.5rem;color:var(--spruce);margin-bottom:4px}
+.qt b{font:700 1.15rem/1.1 var(--display)}
+.qt span{font-size:.85rem;color:var(--muted)}
+
+/* rails */
+.rails{max-width:1200px;margin:6px auto 0;padding:0 24px}
+.rail-sec{margin-top:30px}
+.rail-sec h2{font-size:1.3rem;display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.rail-sec h2 .ic{color:var(--brass);font-size:1.2em}
+.rail{display:flex;gap:22px;overflow-x:auto;padding:8px 4px 20px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.rcard{flex:none;width:142px;scroll-snap-align:start;background:none;border:0;padding:0;text-align:left}
+.rcard .cv,.book .cv{box-shadow:0 14px 26px -16px rgba(18,49,47,.65),inset 0 0 0 1px rgba(0,0,0,.2);transition:transform .18s}
+.rcard:hover .cv,.rcard:focus-visible .cv,.book:hover .cv,.book:focus-visible .cv{transform:translateY(-6px)}
+.rate-s{display:inline-flex;align-items:center;gap:4px;font-weight:600;font-size:.88rem}
+.rate-s .ic{color:var(--brass);fill:var(--brass);font-size:.95em}
+
+/* tools */
+.tools{max-width:1200px;margin:38px auto 6px;padding:0 24px;display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center}
+.field{border:1.5px solid #9DB2AE;background:#fff;border-radius:10px;padding:10px 14px;width:100%}
+.field:focus-visible{border-color:var(--spruce)}
+select.field{appearance:auto}
+.search{position:relative;flex:1 1 280px;max-width:400px}
+.search .ic{position:absolute;left:13px;top:50%;margin-top:-.575em;color:var(--muted);pointer-events:none}
+.search .field{padding-left:40px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1.5px solid #9DB2AE;background:transparent;border-radius:999px;padding:5px 15px;font-weight:500}
+.chip:hover{background:#E1EAE8}
+.chip[aria-pressed=true]{background:var(--spruce);border-color:var(--spruce);color:#fff}
+.check{display:flex;align-items:center;gap:8px;font-weight:500}
+.check input{width:18px;height:18px;accent-color:var(--spruce)}
+.seg{display:flex;margin-left:auto;border:1.5px solid #9DB2AE;border-radius:10px;overflow:hidden}
+.seg button{display:inline-flex;align-items:center;gap:7px;background:transparent;border:0;padding:7px 16px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.found{max-width:1200px;margin:0 auto;padding:6px 24px 18px;color:var(--muted);font-size:.92rem}
+
+/* shelves */
+.shelves{max-width:1200px;margin:0 auto;padding:0 24px 80px}
+.case{background:linear-gradient(#D8E3E0,#E5ECEA);border:1px solid #C3D3CF;border-radius:10px 10px 3px 3px;padding:18px 20px 0;margin-bottom:36px;box-shadow:inset 0 12px 18px -14px rgba(18,49,47,.45);overflow:hidden}
+.plaque{display:inline-flex;align-items:baseline;gap:12px;margin:0 0 22px;padding:5px 16px;background:linear-gradient(#EBD18B,#CBA457);color:#3B2A0B;border:1px solid #A77F35;border-radius:3px;box-shadow:inset 0 1px 0 rgba(255,255,255,.55)}
+.plaque h2{font:700 1.05rem/1.2 var(--display)}
+.plaque span{font-size:.82rem;font-weight:500}
+.shelf{position:relative;display:flex;align-items:flex-end;gap:2px;padding-bottom:14px;margin-bottom:28px}
+.shelf:last-child{margin-bottom:0}
+.shelf::after{content:'';position:absolute;left:-20px;right:-20px;bottom:0;height:14px;background:var(--board);box-shadow:0 -1px 0 rgba(0,0,0,.25)}
+.spine{position:relative;display:block;flex:none;border:0;border-radius:3px 3px 1px 1px;background-color:var(--a);color:var(--t);writing-mode:vertical-rl;text-align:left;padding:30px 0;
+  font:700 14px/1 var(--display);transition:transform .18s;
+  box-shadow:inset 3px 0 0 rgba(255,255,255,.15),inset -3px 0 0 rgba(0,0,0,.22);
+  background-image:linear-gradient(var(--f),var(--f)),linear-gradient(var(--f),var(--f)),linear-gradient(var(--f),var(--f)),linear-gradient(var(--f),var(--f));
+  background-repeat:no-repeat;background-size:100% 2px,100% 2px,100% 1px,100% 1px;
+  background-position:0 12px,0 calc(100% - 12px),0 18px,0 calc(100% - 18px)}
+.spine span{display:block;height:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.spine:hover,.spine:focus-visible{transform:translateY(-14px)}
+.spine.gap{background:transparent;box-shadow:none;border:2px dashed #96ADA8;border-radius:4px;color:#7C948F;font-weight:500;background-image:none}
+.spine.gap::after{content:'';position:absolute;top:8px;left:50%;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:var(--clay)}
+.spine.gap:hover,.spine.gap:focus-visible{transform:none;background:rgba(255,255,255,.55);border-color:var(--spruce)}
+.peek{position:fixed;z-index:30;width:max-content;max-width:290px;display:flex;gap:14px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:0 16px 36px -14px rgba(18,49,47,.55);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s}
+.peek.on{opacity:1;visibility:visible}
+.peek .cv{width:74px;flex:none}
+.peek b{display:block;font:700 1rem/1.25 var(--display)}
+.peek span.by{display:block;color:var(--muted);font-size:.88rem;margin:2px 0 8px}
+.peek .av{display:block;margin-top:6px}
+
+/* cover grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:34px 26px}
+.book{background:none;border:0;padding:0;text-align:left}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;font-size:.9rem}
+.price{font:700 1.05rem/1 var(--display)}
+.av{color:var(--muted);white-space:nowrap;font-size:.88rem}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:var(--sage)}
+.dot.out{background:var(--clay)} .dot.unk{background:#B6C5C0}
+.note{max-width:1200px;margin:10px auto 60px;padding:0 24px}
+.note .box{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:28px;max-width:560px}
+.note h2{font-size:1.4rem;margin-bottom:6px}
+.note p{margin:0 0 14px;color:var(--muted)}
+
+/* book page */
+.bookpage{max-width:1100px;margin:0 auto;padding:24px 24px 80px}
+.back{display:inline-flex;align-items:center;gap:8px;background:none;border:0;padding:6px 0;font-weight:600;color:var(--muted);margin-bottom:12px}
+.back:hover{color:var(--ink)}
+.bp-grid{display:grid;grid-template-columns:260px minmax(0,1fr);gap:46px;align-items:start}
+.bp-side{position:sticky;top:84px}
+.bp-side .cv{box-shadow:0 24px 38px -22px rgba(18,49,47,.85),inset 0 0 0 1px rgba(0,0,0,.2)}
+.bp-side .actions{flex-direction:column;margin-top:20px}
+.bp-side .btn{width:100%}
+.bp-main h1{font:800 clamp(2rem,4vw,3rem)/1.05 var(--display);margin-bottom:8px;letter-spacing:-.01em}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 20px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:#E1EAE8;color:var(--spruce);font-size:.85rem;font-weight:600}
+.bigp{display:flex;align-items:center;gap:16px;margin:18px 0 6px}
+.bigp .price{font-size:1.9rem}
+.ratebox{display:grid;grid-template-columns:150px minmax(0,1fr);gap:26px;align-items:center;padding:18px 20px;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:26px 0}
+.ratebox .big{font:800 3.1rem/1 var(--display)}
+.bar{display:grid;grid-template-columns:30px 1fr 26px;align-items:center;gap:10px;font-size:.88rem;margin:3px 0}
+.bar i{display:block;height:8px;border-radius:4px;background:#DDE6E3;overflow:hidden}
+.bar i b{display:block;height:100%;background:var(--brass)}
+.desc{margin:0 0 18px;max-width:62ch}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0 0 22px;font-size:.92rem}
+.facts dt{color:var(--muted)} .facts dd{margin:0}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+.hint{font-size:.88rem;color:var(--muted);margin:8px 0 0}
+.sec{border-top:1px solid var(--line);margin-top:28px;padding-top:22px}
+.sec h2{font-size:1.25rem;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.sec h2 .ic{color:var(--brass)}
+.stars{color:var(--brass);letter-spacing:1px;white-space:nowrap}
+.stars .off{color:#D5DEDB}
+.review{padding:12px 0;border-bottom:1px solid var(--line)}
+.review p{margin:4px 0 0}
+.review small{color:var(--muted)}
+.more{margin-top:44px;padding-top:6px;border-top:3px solid var(--ink)}
+
+/* forms, panel */
+form.f{display:grid;gap:14px}
+label.l{display:grid;gap:5px;font-size:.92rem;font-weight:600}
+textarea.field{min-height:84px;resize:vertical}
+.rate{display:flex;gap:2px;border:0;padding:0;margin:0}
+.rate input{position:absolute;opacity:0}
+.rate label{font-size:1.8rem;line-height:1;color:#D5DEDB;cursor:pointer;padding:2px}
+.rate label.on{color:var(--brass)}
+.rate input:focus-visible+label{outline:3px solid var(--spruce);outline-offset:1px}
+.tabs{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap}
+.tabs button{display:inline-flex;align-items:center;gap:7px;background:transparent;border:1.5px solid #9DB2AE;border-radius:999px;padding:6px 16px;font-weight:600}
+.tabs button:hover{background:#E1EAE8}
+.tabs button[aria-selected=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+.err{color:var(--clay);font-size:.92rem;margin:0;font-weight:500}
+.scrim{position:fixed;inset:0;background:rgba(18,49,47,.5);opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+.scrim.on{opacity:1;pointer-events:auto}
+.panel{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--surface);border-left:1px solid var(--line);z-index:21;display:flex;flex-direction:column;transform:translateX(100%);visibility:hidden;transition:transform .22s,visibility 0s .22s}
+.panel.on{transform:none;visibility:visible;transition:transform .22s}
+.p-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 22px;background:var(--spruce-deep);color:#fff;border-bottom:3px solid var(--brass)}
+.p-head h2{font-size:1.25rem;line-height:1.2}
+.p-body{padding:22px;overflow:auto;flex:1}
+.x{display:grid;place-items:center;background:transparent;border:1.5px solid #6F9A95;color:#fff;border-radius:10px;width:38px;height:38px;flex:none}
+.x:hover{background:rgba(255,255,255,.12)}
+
+/* rows & date-due slips */
+.row{display:grid;grid-template-columns:48px 1fr auto;gap:16px;padding:16px 0;border-bottom:1px solid var(--line);align-items:center}
+.row h4{font:700 1.02rem/1.25 var(--text)}
+.row p{margin:2px 0 0;font-size:.9rem;color:var(--muted)}
+.end{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.dueslip{position:relative;display:grid;grid-template-columns:48px 1fr auto;gap:16px;align-items:center;background:var(--paper);border:1px solid #DDD3B8;border-left:8px solid var(--brass);border-radius:3px;padding:16px 18px;margin-bottom:14px;box-shadow:0 8px 18px -14px rgba(18,49,47,.6)}
+.dueslip h4{font:700 1.02rem/1.25 var(--text)}
+.dueslip .typed{margin:3px 0 0;font:400 .92rem/1.4 var(--type);color:#3A3D34}
+.dueslip.is-done{opacity:.82;border-left-color:#B6C5C0}
+.ds-side{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.stamp-t{display:inline-block;border:2.5px solid var(--plum);border-radius:4px;color:var(--plum);padding:3px 10px 1px;font:400 1rem/1.2 var(--type);letter-spacing:.07em;text-transform:uppercase;transform:rotate(-5deg);opacity:.9;white-space:nowrap}
+.stamp-t.late{border-color:var(--clay);color:var(--clay)}
+.stamp-t.ok{border-color:var(--sage);color:var(--sage)}
+.link{background:none;border:0;padding:0;text-align:left;color:inherit;font:inherit;font-weight:700;text-decoration:underline;text-decoration-thickness:2px;text-decoration-color:var(--brass);text-underline-offset:3px}
+.qty{display:flex;align-items:center;border:1.5px solid #9DB2AE;border-radius:10px;background:#fff}
+.qty button{background:none;border:0;width:32px;height:32px;font-size:1.1rem;font-weight:600}
+.qty span{min-width:26px;text-align:center;font-weight:600}
+.total{display:flex;justify-content:space-between;align-items:baseline;padding:20px 0 16px;font-size:1.1rem;border-top:1px solid var(--line);margin-top:6px}
+.total b{font:800 1.8rem/1 var(--display)}
+.tag{display:inline-block;font-size:.78rem;font-weight:600;padding:2px 10px;border-radius:999px;background:#E1EAE8;color:var(--spruce);white-space:nowrap}
+.tag.late{background:#F3DDD7;color:var(--clay)} .tag.ok{background:#D9EBDF;color:#2F6A4A} .tag.wait{background:#F3E6C4;color:#7A5A12}
+.wrap{max-width:900px;margin:0 auto;padding:44px 24px 80px}
+.wrap h1,.adm h1{font:800 clamp(2.2rem,5vw,3.2rem)/1.05 var(--display);margin-bottom:6px;display:flex;align-items:center;gap:14px}
+.wrap h1 .ic,.adm h1 .ic{color:var(--brass);font-size:.8em}
+.by{margin:0 0 12px;color:var(--muted)}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));margin:24px 0 32px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.sum div{padding:14px 16px;border-right:1px solid var(--line)}
+.sum div:last-child{border-right:0}
+.sum b{display:block;font:700 1.35rem/1.25 var(--display)}
+.sum span{font-size:.85rem;color:var(--muted)}
+.pad{padding:28px 0;color:var(--muted);margin:0}
+
+/* personal bookcase: what you've borrowed, standing on your own shelf */
+.bookcase{--cw:clamp(78px,19vw,168px);--gap:clamp(12px,2.4vw,22px);position:relative;margin:26px 0 34px;padding:16px 16px 22px;border-radius:18px;background:var(--spruce-deep);border:3px solid #2F6D68;box-shadow:0 34px 50px -34px rgba(18,49,47,.9)}
+.bc-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:0 6px 14px}
+.plate{display:inline-flex;align-items:baseline;gap:12px;padding:5px 18px;background:linear-gradient(#EBD18B,#CBA457);color:#3B2A0B;border:1px solid #A77F35;border-radius:3px;font:700 1.05rem/1.2 var(--display);box-shadow:inset 0 1px 0 rgba(255,255,255,.55)}
+.plate span{font:500 .82rem var(--text)}
+.slots{display:flex;gap:6px;align-items:center;color:#BCD0CC;font-size:.85rem}
+.slots i{display:block;width:12px;height:19px;border-radius:2px;border:1.5px solid #6F9A95}
+.slots i.on{background:var(--foil);border-color:#C9A44D}
+.bc-in{position:relative;overflow:hidden;border-radius:10px;background:repeating-linear-gradient(90deg,#0D2B29 0 62px,#0A2321 62px 64px);box-shadow:inset 0 14px 22px -12px rgba(0,0,0,.65)}
+.stage{position:relative;display:flex;align-items:flex-end;gap:var(--gap);padding:44px calc(var(--gap)*1.8) 0;min-height:calc(var(--cw)*1.5 + 52px)}
+.col{position:relative;width:var(--cw);flex:none}
+.bk{position:relative;display:block;width:100%;background:none;border:0;padding:0;transform-origin:50% 100%;transform:rotate(var(--tilt,0deg));transition:transform .2s}
+.bk:hover,.bk:focus-visible{transform:translateY(-8px) rotate(var(--tilt,0deg))}
+.bk .cv{box-shadow:12px 6px 20px -8px rgba(0,0,0,.75),inset 0 0 0 1px rgba(0,0,0,.25)}
+.rib{position:absolute;top:-12px;right:16%;width:18px;height:46px;background:var(--brass);clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%);z-index:3}
+.rib.soon{background:#E6B23C} .rib.late{background:#D4513A}
+.freeslot{width:var(--cw);flex:none;aspect-ratio:2/3;display:grid;place-items:center;text-align:center;padding:8px;border:2px dashed rgba(231,199,119,.38);border-radius:3px 8px 8px 3px;color:rgba(231,199,119,.7);font:400 .8rem/1.3 var(--type)}
+.col.drop .bk{animation:place .75s cubic-bezier(.2,.9,.3,1.2) backwards;animation-delay:calc(var(--i)*130ms)}
+.col.leaving .bk{animation:lift .38s ease-in forwards}
+@keyframes place{from{opacity:0;transform:translateY(-90px) rotate(calc(var(--tilt,0deg) - 9deg))}}
+@keyframes lift{to{opacity:0;transform:translateY(-70px) rotate(7deg)}}
+.bend{position:absolute;bottom:0;width:16px;height:118px;background:linear-gradient(90deg,#CBA457,#EBD18B);border-radius:3px 3px 0 0;box-shadow:inset -3px 0 0 rgba(0,0,0,.18)}
+.bend::after{content:'';position:absolute;bottom:0;width:40px;height:8px;background:inherit;border-radius:2px}
+.bend.l{left:calc(var(--gap)*.5)} .bend.l::after{left:0}
+.bend.r{right:calc(var(--gap)*.5)} .bend.r::after{right:0}
+.plant{position:absolute;right:calc(var(--gap)*2.2);bottom:0;width:78px;height:auto}
+.board{position:relative;height:20px;background:var(--board);border-top:3px solid #4C8F89;box-shadow:0 12px 20px -8px rgba(0,0,0,.6)}
+.tags{display:flex;gap:var(--gap);padding:16px calc(var(--gap)*1.8) 20px}
+.tagc,.tagc-ph{width:var(--cw);flex:none}
+.tagc{background:var(--paper);color:#2A2D27;border:1px solid #D9CFB3;border-top:4px solid var(--brass);border-radius:2px 2px 5px 5px;padding:9px 10px 10px;font-family:var(--type);font-size:.78rem;line-height:1.35;box-shadow:0 8px 16px -10px rgba(0,0,0,.7)}
+.tagc b{display:block;font-weight:400;font-size:.95rem}
+.tagc .st{display:block;color:var(--sage)}
+.tagc .fine{display:block;color:var(--clay)}
+.tagc.late{border-top-color:var(--clay)} .tagc.late .st{color:var(--clay)}
+.tagc .btn{margin-top:8px;width:100%;font-family:var(--text);padding:5px 8px}
+.emptymsg{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px 20px;margin:18px calc(var(--gap)*1.8) 22px;padding:14px 18px;background:var(--paper);border:1px solid #D9CFB3;border-left:8px solid var(--brass);border-radius:3px;font:400 .95rem/1.45 var(--type);color:#2A2D27}
+.emptymsg b{font-weight:400;font-size:1.1rem;display:block}
+.toast .lnk{background:none;border:0;padding:0;margin-left:8px;color:var(--foil);font:inherit;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+@media (max-width:640px){
+  .bookcase{padding:12px 12px 16px}
+  .tagc{padding:7px 6px 8px;font-size:.7rem}.tagc b{font-size:.8rem}
+  .tagc .btn{font-size:.74rem;padding:4px 4px;gap:4px}
+  .plant,.bend{display:none}
+}
+
+/* admin */
+.adm{max-width:1200px;margin:0 auto;padding:40px 24px 80px}
+.tbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:4px 0 16px}
+.tbar .search{max-width:340px}
+.tblw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
+.tbl th{text-align:left;padding:11px 14px;background:#E3EBE9;font-weight:600;white-space:nowrap}
+.tbl td{padding:10px 14px;border-top:1px solid var(--line);vertical-align:middle}
+.tbl .num{text-align:right;white-space:nowrap}
+.tbl small{color:var(--muted)}
+.acts{display:flex;gap:6px;justify-content:flex-end}
+.nin{width:84px;padding:6px 10px;border:1.5px solid #9DB2AE;border-radius:8px;background:#fff}
+.two{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:28px;align-items:start}
+.card{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:20px}
+.card h2{font-size:1.2rem;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.card h2 .ic{color:var(--brass)}
+.mlist{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:14px}
+.statgrid div{background:#fff;padding:10px 14px}
+.statgrid b{display:block;font:700 1.2rem/1.2 var(--display)}
+.statgrid span{font-size:.82rem;color:var(--muted)}
+
+#toasts{position:fixed;left:16px;bottom:16px;z-index:40;display:grid;gap:10px;max-width:min(400px,calc(100% - 32px))}
+.toast{background:var(--spruce-deep);color:#fff;padding:11px 16px;border-radius:10px;font-weight:500;border-left:6px solid var(--foil);box-shadow:0 12px 24px -12px rgba(0,0,0,.5)}
+.toast.err{background:#F9E4DF;color:#7A2415;border-left-color:var(--clay)}
+
+@media (max-width:1000px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .qgrid{grid-template-columns:repeat(3,1fr)}
+  .two{grid-template-columns:1fr}
+}
+@media (max-width:900px){
+  .hero-in{grid-template-columns:1fr;gap:56px;padding:40px 20px 96px}
+  .hero h1{max-width:12ch}
+  .bp-grid{grid-template-columns:1fr;gap:28px}
+  .bp-side{position:static;display:grid;grid-template-columns:150px 1fr;gap:20px;align-items:start}
+  .bp-side .actions{margin-top:0}
+  .ratebox{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .top-in{padding:10px 16px;gap:8px;flex-wrap:wrap}
+  .nav{order:3;width:100%;margin:0;overflow-x:auto}
+  .alerts-in,.tools,.found,.shelves,.note,.rails,.quick,.stats{padding-left:16px;padding-right:16px}
+  .seg{margin-left:0}
+  .grid{grid-template-columns:repeat(2,1fr);gap:28px 16px}
+  .who{display:none}
+  .wrap,.adm,.bookpage{padding-left:16px;padding-right:16px}
+  .qgrid{grid-template-columns:repeat(2,1fr)}
+  .row,.dueslip{grid-template-columns:48px 1fr}
+  .row .end,.ds-side{grid-column:1 / -1;align-items:flex-start;justify-content:flex-start;flex-direction:row}
+  .case{padding:16px 14px 0}
+  .shelf::after{left:-14px;right:-14px}
+  .bp-side{grid-template-columns:110px 1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="top-in" id="top"></div><div class="alerts" id="alerts" hidden></div></header>
+<main id="view"></main>
+
+<div class="peek" id="peek" aria-hidden="true"></div>
+<div class="scrim" id="scrim" data-act="closePanel"></div>
+<aside class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+  <div class="p-head"><h2 class="disp" id="pTitle"></h2><button class="x" data-act="closePanel" aria-label="Close panel"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+  <div class="p-body" id="pBody"></div>
+</aside>
+<div id="toasts" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ---------- Settings ---------- */
+const CONFIG = {
+  // Change this to your own API address. For local testing you can also open index.html?api=http://localhost:8080
+  API: new URLSearchParams(location.search).get('api') || 'https://library-management-system-server.up.railway.app',
+  CURRENCY: '',          // e.g. 'EGP' (leave empty to show plain numbers)
+  BORROW_DAYS: 14, MAX_BORROWS: 3, FINE_PER_DAY: 50
+};
+
+/* ---------- Icons (inline SVG, drawn on a 24px grid) ---------- */
+const ICONS = {
+  book:'<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  cart:'<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
+  user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  bookmark:'<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  checkc:'<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  edit:'<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+  trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  eye:'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+  shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+  bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  star:'<path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',
+  undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>',
+  library:'<path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/>',
+  layers:'<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  box:'<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+  bag:'<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+  hourglass:'<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>',
+  alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+  login:'<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/>',
+  msg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  arrowL:'<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+  grid:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+  rows:'<path d="M3 5h18"/><path d="M3 12h18"/><path d="M3 19h18"/>',
+  sparkle:'<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/>',
+  tag:'<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5"/>',
+  home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>'
+};
+const ic = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+
+/* ---------- Helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} }
+};
+const money = n => (Number(n) || 0).toFixed(2) + (CONFIG.CURRENCY ? ' ' + CONFIG.CURRENCY : '');
+const hash = s => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+
+/* Cloth-bound editions: every book gets a tone-on-tone cover with gold foil, derived from its title and author */
+const THEMES = [
+  {a:'#22324D',b:'#34496B',c:'#172338',f:'#E7C777',t:'#F2E8CF'},  // midnight
+  {a:'#1F5C58',b:'#2E7873',c:'#143F3C',f:'#E7C777',t:'#F2E8CF'},  // spruce
+  {a:'#56704A',b:'#6D8960',c:'#3F5436',f:'#E7C777',t:'#F5EEDB'},  // moss
+  {a:'#C48A2B',b:'#D8A44C',c:'#9A6A1B',f:'#3A2810',t:'#2B1D08'},  // ochre
+  {a:'#A24A5C',b:'#BA6577',c:'#7E3446',f:'#F0D58F',t:'#FFF1EC'},  // rose
+  {a:'#5A3A5E',b:'#74507A',c:'#402643',f:'#E7C777',t:'#F2E8CF'},  // plum
+  {a:'#A4492F',b:'#BD6347',c:'#7C3320',f:'#F0D58F',t:'#FFEBDD'},  // rust
+  {a:'#475A6B',b:'#61778A',c:'#34424F',f:'#E7C777',t:'#F2F1EA'}   // slate
+];
+const themeOf = b => THEMES[hash((b.title || '') + (b.author || '')) % THEMES.length];
+const themeVars = b => { const t = themeOf(b); return `--a:${t.a};--b:${t.b};--c:${t.c};--f:${t.f};--t:${t.t}`; };
+function coverHtml(b, cls = '') {
+  if (!b) return `<div class="cv blank mini s0 ${cls}"><i class="art"></i></div>`;
+  const h = hash((b.title || '') + (b.author || ''));
+  return `<div class="cv s${(h >> 5) % 6} ${cls}" style="${themeVars(b)}"><i class="art"></i><div class="in"><i class="rule"></i><h3>${esc(b.title)}</h3><small>${esc(b.author)}</small></div></div>`;
+}
+const spineWidth = b => 36 + hash((b.title || '') + (b.author || '')) % 22;
+const spineHeight = b => 172 + (hash((b.title || '') + (b.author || '')) >> 3) % 62;
+
+function toDate(v) {
+  if (!v) return null;
+  if (Array.isArray(v)) return new Date(v[0], v[1] - 1, v[2], v[3] || 0, v[4] || 0);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  const d = new Date(v); return isNaN(d) ? null : d;
+}
+const fmt = v => { const d = toDate(v); return d ? d.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}) : ''; };
+const fmtShort = v => { const d = toDate(v); return d ? d.toLocaleDateString('en-GB', {day:'numeric', month:'short'}) : ''; };
+const daysLate = due => {
+  const d = toDate(due); if (!d) return 0;
+  const t = new Date(); t.setHours(0,0,0,0);
+  return Math.max(0, Math.floor((t - d) / 864e5));
+};
+const stars = n => `<span class="stars" aria-label="${n} out of 5">${'★'.repeat(n)}<span class="off">${'★'.repeat(5 - n)}</span></span>`;
+
+/* ---------- State ---------- */
+const S = {
+  view: 'catalog', bookId: null, mode: store.get('lib.mode', 'shelves'),
+  books: [], stock: new Map(), inventory: [], cats: [], avg: new Map(), loading: true, error: null,
+  q: '', cat: 'all', onlyAvail: false,
+  token: store.get('lib.token', null), user: store.get('lib.user', null), cart: store.get('lib.cart', []),
+  panel: null, afterAuth: null, lastFocus: null, acct: null, dismissed: new Set(), bp: null,
+  shelfTab: 'borrows', shelf: { loading: false, loaded: false, data: {} },
+  adminTab: 'books', adm: {}, admQ: '', loanFilter: 'ALL'
+};
+const stockOf = id => S.stock.has(id) ? S.stock.get(id) : null;
+const bookById = id => S.books.find(b => b.id === id);
+const saveCart = () => store.set('lib.cart', S.cart);
+const isAdmin = () => !!(S.user && /ADMIN/.test(String(S.user.role)));
+
+/* ---------- API ---------- */
+class ApiError extends Error { constructor(status, message) { super(message); this.status = status; } }
+async function api(path, { method = 'GET', body, auth = true } = {}) {
+  const headers = { Accept: 'application/json' };
+  if (body) headers['Content-Type'] = 'application/json';
+  if (auth && S.token) headers.Authorization = 'Bearer ' + S.token;
+  let res;
+  try {
+    res = await fetch(CONFIG.API + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  } catch {
+    throw new ApiError(0, 'Can\'t reach the server. Check your connection and the API address in index.html.');
+  }
+  if (res.status === 204) return null;
+  const text = await res.text(); let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch {}
+  if (!res.ok) {
+    let msg = data && (data.message || (data.messages && Object.values(data.messages).join('. ')));
+    if (S.token && auth && (res.status === 401 || (res.status === 403 && !msg))) {
+      signOut(true);
+      throw new ApiError(res.status, 'Your session has ended. Sign in again to continue.');
+    }
+    throw new ApiError(res.status, msg || `Something went wrong (${res.status}).`);
+  }
+  return data;
+}
+
+/* ---------- Toasts & busy ---------- */
+function toast(msg, kind, action) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind === 'err' ? ' err' : '');
+  el.textContent = msg;
+  if (action) { const b = document.createElement('button'); b.className = 'lnk'; b.textContent = action.label; b.dataset.act = 'go'; b.dataset.h = action.h; el.appendChild(b); }
+  $('#toasts').appendChild(el);
+  setTimeout(() => el.remove(), kind === 'err' || action ? 7000 : 4500);
+}
+async function run(btn, fn) {
+  let html;
+  if (btn) { html = btn.innerHTML; btn.disabled = true; btn.textContent = 'Working…'; }
+  try { return await fn(); }
+  catch (e) { toast(e.message, 'err'); }
+  finally { if (btn && btn.isConnected) { btn.disabled = false; btn.innerHTML = html; } }
+}
+
+/* ---------- Routing (hash based, so the browser back button works) ---------- */
+function route() {
+  const [a, b] = location.hash.replace(/^#\/?/, '').split('/');
+  if (a === 'shelf') S.view = 'shelf';
+  else if (a === 'book' && b) { S.view = 'book'; S.bookId = Number(b); }
+  else if (a === 'admin' && isAdmin()) S.view = 'admin';
+  else S.view = 'catalog';
+  if (S.panel) closePanel();
+  hidePeek(); renderTop();
+  if (S.view === 'book') initBook(S.bookId);
+  if (S.view === 'admin') loadAdmin(S.adminTab);
+  renderView(); window.scrollTo(0, 0);
+}
+function go(h) { if (location.hash === h) route(); else location.hash = h; }
+window.addEventListener('hashchange', route);
+
+/* ---------- Session ---------- */
+function setSession(res) {
+  S.token = res.token; S.user = { email: res.email, fullName: res.fullName, role: res.role };
+  store.set('lib.token', S.token); store.set('lib.user', S.user);
+  S.shelf = { loading: false, loaded: false, data: {} };
+  renderTop();
+  const cb = S.afterAuth; S.afterAuth = null;
+  if (cb) cb(); else closePanel();
+  if (S.view === 'shelf') loadShelf(); else renderView();
+  loadAccount();
+  toast(`Signed in as ${S.user.fullName || S.user.email}.`);
+}
+function signOut(expired) {
+  S.token = null; S.user = null; S.acct = null; store.del('lib.token'); store.del('lib.user');
+  S.shelf = { loading: false, loaded: false, data: {} };
+  if (S.view === 'admin' || S.view === 'shelf') { location.hash = '#/'; }
+  renderTop(); renderAlerts(); renderView();
+  if (!expired) toast('Signed out.');
+}
+
+/* ---------- Data loading ---------- */
+async function refreshStock() {
+  try {
+    const inv = await api('/api/inventory', { auth: false });
+    S.inventory = inv || [];
+    S.stock = new Map(S.inventory.map(i => [i.book && i.book.id, i.availableCopies]));
+  } catch {}
+}
+async function loadCatalog() {
+  S.loading = true; S.error = null; renderView();
+  try {
+    const [books, inv, cats] = await Promise.all([
+      api('/api/books', { auth: false }), api('/api/inventory', { auth: false }), api('/api/categories', { auth: false })
+    ]);
+    S.books = books || [];
+    S.inventory = inv || [];
+    S.stock = new Map(S.inventory.map(i => [i.book && i.book.id, i.availableCopies]));
+    S.cats = cats || [];
+    S.cart = S.cart.filter(i => bookById(i.bookId)); saveCart();
+  } catch (e) { S.error = e.message; }
+  S.loading = false; renderTop(); renderView();
+  loadRatings();
+}
+async function loadRatings() {
+  await Promise.all(S.books.slice(0, 80).map(b =>
+    api(`/api/reviews/book/${b.id}/average`, { auth: false })
+      .then(r => { if (r && typeof r.averageRating === 'number') S.avg.set(b.id, r.averageRating); else S.avg.delete(b.id); })
+      .catch(() => {})));
+  if (S.view === 'catalog') renderRails();
+}
+async function loadAccount() {
+  if (!S.token) { S.acct = null; renderAlerts(); renderQuick(); return; }
+  const get = p => api(p).catch(() => null);
+  const [borrows, reservations, summary] = await Promise.all([get('/api/borrows/my'), get('/api/reservations/my'), get('/api/users/me/activity-summary')]);
+  if (!S.token) return;
+  S.acct = { borrows, reservations, summary };
+  renderAlerts(); renderQuick();
+}
+async function loadShelf() {
+  if (!S.token) return renderView();
+  S.shelf.loading = true; renderView();
+  const get = p => api(p).catch(e => ({ __err: e.message }));
+  const [borrows, reservations, orders, reviews, summary] = await Promise.all([
+    get('/api/borrows/my'), get('/api/reservations/my'), get('/api/orders/my'),
+    get('/api/reviews/my'), get('/api/users/me/activity-summary')
+  ]);
+  S.shelf = { loading: false, loaded: true, data: { borrows, reservations, orders, reviews, summary } };
+  if (S.token && S.view === 'shelf') renderView();
+}
+function afterAccountChange() { S.shelf.loaded = false; loadAccount(); }
+
+/* ---------- Header & alerts ---------- */
+function renderTop() {
+  const n = S.cart.reduce((a, i) => a + i.qty, 0), cur = S.view === 'book' ? 'catalog' : S.view;
+  const nav = (v, icon, label) => `<button data-act="nav" data-v="${v}" ${cur === v ? 'aria-current="page"' : ''}>${ic(icon)}<span>${label}</span></button>`;
+  $('#top').innerHTML = `
+    <button class="brand" data-act="nav" data-v="catalog"><i class="mark"></i>Library</button>
+    <nav class="nav" aria-label="Main">${nav('catalog', 'home', 'Catalog')}${nav('shelf', 'bookmark', 'My shelf')}${isAdmin() ? nav('admin', 'shield', 'Admin') : ''}</nav>
+    <span class="grow"></span>
+    ${S.user ? `<span class="who">${ic('user')}${esc(S.user.fullName || S.user.email)}${isAdmin() ? '<span class="role">Admin</span>' : ''}</span>` : ''}
+    <button class="btn ghost sm" data-act="openCart">${ic('cart')}Cart${n ? `<span class="count">${n}</span>` : ''}</button>
+    ${S.user ? `<button class="btn ghost sm" data-act="signOut">${ic('logout')}Sign out</button>`
+             : `<button class="btn sm" data-act="openAuth" data-mode="login">${ic('login')}Sign in</button>`}`;
+}
+function computeAlerts() {
+  if (!S.token || !S.acct) return [];
+  const out = [], b = S.acct.borrows, r = S.acct.reservations;
+  const open = Array.isArray(b) ? b.filter(x => x.status !== 'RETURNED') : [];
+  const late = open.filter(x => daysLate(x.dueDate) > 0);
+  if (late.length) {
+    const fine = late.reduce((a, x) => a + daysLate(x.dueDate) * CONFIG.FINE_PER_DAY, 0);
+    out.push({ k: 'late', cls: 'late', icon: 'alert', text: `${late.length} ${late.length === 1 ? 'book is' : 'books are'} overdue. Returning today adds ${money(fine)} in fines.`, go: '#/shelf', btn: 'Go to my shelf' });
+  }
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  open.filter(x => daysLate(x.dueDate) === 0).forEach(x => {
+    const d = toDate(x.dueDate); if (!d) return;
+    const n = Math.round((d - today) / 864e5);
+    if (n <= 3) out.push({ k: 'soon' + x.id, cls: 'soon', icon: 'clock', text: `${x.book && x.book.title} is due ${n <= 0 ? 'today' : n === 1 ? 'tomorrow' : `in ${n} days`}.`, go: '#/shelf', btn: 'View' });
+  });
+  (Array.isArray(r) ? r : []).filter(x => x.status === 'FULFILLED').forEach(x =>
+    out.push({ k: 'res' + x.id, cls: 'ready', icon: 'checkc', text: `Your reserved copy of ${x.book && x.book.title} is ready.`, go: `#/book/${x.book && x.book.id}`, btn: 'Borrow it' }));
+  return out.filter(a => !S.dismissed.has(a.k));
+}
+function renderAlerts() {
+  const el = $('#alerts'); if (!el) return;
+  const list = computeAlerts();
+  el.hidden = !list.length;
+  el.innerHTML = list.length ? `<div class="alerts-in">${list.map(a => `<span class="alert ${a.cls}">${ic(a.icon)}${esc(a.text)}
+    <button class="lnk" data-act="go" data-h="${esc(a.go)}">${a.btn}</button>
+    <button class="xx" data-act="dismiss" data-k="${esc(a.k)}" aria-label="Dismiss">${ic('x')}</button></span>`).join('')}</div>` : '';
+}
+
+/* ---------- Views ---------- */
+function renderView() {
+  ({ catalog: viewHome, shelf: viewShelf, book: viewBook, admin: viewAdmin }[S.view] || viewHome)();
+}
+
+function filtered() {
+  const q = S.q.trim().toLowerCase();
+  return S.books.filter(b => {
+    if (S.cat !== 'all' && String(b.category && b.category.id) !== String(S.cat)) return false;
+    if (S.onlyAvail && !(stockOf(b.id) > 0)) return false;
+    if (!q) return true;
+    return [b.title, b.author, b.genre, b.publisher].some(v => (v || '').toLowerCase().includes(q));
+  });
+}
+function availInfo(b) {
+  const n = stockOf(b.id);
+  if (n === null) return { cls: 'unk', t: 'Stock not listed', short: 'No stock info' };
+  if (n === 0) return { cls: 'out', t: 'All copies out', short: 'All out' };
+  return { cls: '', t: `${n} ${n === 1 ? 'copy' : 'copies'} in`, short: `${n} in` };
+}
+const ratingBit = b => S.avg.has(b.id) ? `<span class="rate-s">${ic('star')}${S.avg.get(b.id).toFixed(1)}</span>` : '';
+function bookCard(b) {
+  const a = availInfo(b);
+  return `<button class="book" data-act="openBook" data-id="${b.id}" aria-label="${esc(b.title)} by ${esc(b.author)}">
+    ${coverHtml(b)}
+    <div class="meta"><span class="price">${money(b.price)}</span><span class="av"><span class="dot ${a.cls}"></span>${a.short}</span></div></button>`;
+}
+function railCard(b) {
+  const a = availInfo(b);
+  return `<button class="rcard" data-act="openBook" data-id="${b.id}" aria-label="${esc(b.title)} by ${esc(b.author)}">
+    ${coverHtml(b)}
+    <div class="meta"><span class="price">${money(b.price)}</span>${ratingBit(b) || `<span class="av"><span class="dot ${a.cls}"></span>${a.short}</span>`}</div></button>`;
+}
+
+/* shelves: books grouped by category, shelved by author, rows filled to the width of the case */
+function groupsOf(list) {
+  const byId = new Map(S.cats.map(c => [c.id, { name: c.name, books: [] }]));
+  const other = { name: S.cats.length ? 'Other' : 'The collection', books: [] };
+  list.forEach(b => { const g = b.category && byId.get(b.category.id); (g || other).books.push(b); });
+  const out = [...byId.values()].filter(g => g.books.length);
+  if (other.books.length) out.push(other);
+  out.forEach(g => g.books.sort((x, y) => (x.author || '').localeCompare(y.author || '') || (x.title || '').localeCompare(y.title || '')));
+  return out;
+}
+function rowsOf(books, avail) {
+  const rows = []; let row = [], used = 0;
+  for (const b of books) {
+    const w = spineWidth(b) + 2;
+    if (row.length && used + w > avail) { rows.push(row); row = []; used = 0; }
+    row.push(b); used += w;
+  }
+  if (row.length) rows.push(row);
+  return rows;
+}
+function spineHtml(b) {
+  const out = stockOf(b.id) === 0;
+  return `<button class="spine${out ? ' gap' : ''}" data-act="openBook" data-id="${b.id}" style="${themeVars(b)};width:${spineWidth(b)}px;height:${spineHeight(b)}px"
+    aria-label="${esc(b.title)} by ${esc(b.author)}${out ? ', all copies out' : ''}"><span>${esc(b.title)}</span></button>`;
+}
+function shelvesHtml(list) {
+  const g = $('#gridWrap'), avail = Math.max(240, (g ? g.clientWidth : 1152) - 40 - 24) || 1088;
+  return `<div class="shelves">${groupsOf(list).map(grp => `
+    <section class="case" aria-label="${esc(grp.name)}">
+      <div class="plaque"><h2>${esc(grp.name)}</h2><span>${grp.books.length} ${grp.books.length === 1 ? 'book' : 'books'}</span></div>
+      ${rowsOf(grp.books, avail).map(r => `<div class="shelf">${r.map(spineHtml).join('')}</div>`).join('')}
+    </section>`).join('')}</div>`;
+}
+function gridHtml() {
+  if (S.loading) return `<div class="note"><div class="box"><h2 class="disp">Loading the shelves</h2><p>Fetching books and stock from the server. The first request can take a few seconds.</p></div></div>`;
+  if (S.error) return `<div class="note"><div class="box"><h2 class="disp">The catalog didn't load</h2><p>${esc(S.error)}</p><button class="btn" data-act="retry">${ic('undo')}Try again</button></div></div>`;
+  const list = filtered();
+  if (!S.books.length) return `<div class="note"><div class="box"><h2 class="disp">No books yet</h2><p>The library is empty right now.${isAdmin() ? ' Add the first book from the Admin tab.' : ' Check back after the next delivery.'}</p></div></div>`;
+  if (!list.length) return `<div class="note"><div class="box"><h2 class="disp">No matches</h2><p>Nothing fits those filters. Try a shorter search or a different category.</p><button class="btn ghost" data-act="clearFilters">${ic('x')}Clear filters</button></div></div>`;
+  return S.mode === 'covers' ? `<div class="shelves"><div class="grid">${list.map(bookCard).join('')}</div></div>` : shelvesHtml(list);
+}
+function renderGrid() {
+  const g = $('#gridWrap'); if (!g) return;
+  g.innerHTML = gridHtml(); hidePeek();
+  const f = $('#found');
+  if (f) f.textContent = (S.loading || S.error) ? '' :
+    `${filtered().length} of ${S.books.length} books.` + (S.mode === 'shelves' ? ' Shelved by author. A dashed gap is a book that\'s out; open it to reserve.' : '');
+}
+
+/* stats, quick access and rails */
+function renderStats() {
+  const el = $('#stats'); if (!el) return;
+  const loaded = !S.loading && !S.error;
+  const copies = [...S.stock.values()].reduce((a, n) => a + (Number(n) || 0), 0);
+  const out = S.books.filter(b => stockOf(b.id) === 0).length;
+  const t = (icon, v, l) => `<div class="stat"><span class="bx">${ic(icon)}</span><div><b>${loaded ? v : '…'}</b><span>${l}</span></div></div>`;
+  el.innerHTML = t('book', S.books.length, 'Titles in the catalog') + t('layers', S.cats.length, 'Categories') + t('library', copies, 'Copies on the shelves') + t('hourglass', out, 'Titles currently out');
+}
+function renderQuick() {
+  const el = $('#quick'); if (!el) return;
+  const s = S.acct && S.acct.summary, n = S.cart.reduce((a, i) => a + i.qty, 0);
+  const v = f => S.user ? (s ? f(s) : '…') : 'Sign in';
+  const tiles = [
+    ['book', 'Borrowed', v(x => `${x.activeBorrows} of ${CONFIG.MAX_BORROWS}`), 'borrows'],
+    ['hourglass', 'On the waitlist', v(x => x.activeReservations), 'reservations'],
+    ['bag', 'Orders', v(x => x.totalOrders), 'orders'],
+    ['msg', 'My reviews', v(x => x.totalReviews), 'reviews']
+  ];
+  el.innerHTML = `<h2 class="disp">${ic('bookmark')}Your library</h2><div class="qgrid">
+    ${tiles.map(([i, l, val, tab]) => `<button class="qt" data-act="quick" data-tab="${tab}">${ic(i)}<b>${val}</b><span>${l}</span></button>`).join('')}
+    <button class="qt" data-act="openCart">${ic('cart')}<b>${n} ${n === 1 ? 'item' : 'items'}</b><span>In your cart</span></button></div>`;
+}
+function renderRails() {
+  const el = $('#rails'); if (!el) return;
+  if (S.loading || S.error || !S.books.length) { el.innerHTML = ''; return; }
+  const sec = (icon, title, list) => list.length ? `<section class="rail-sec"><h2 class="disp">${ic(icon)}${title}</h2><div class="rail">${list.map(railCard).join('')}</div></section>` : '';
+  const top = S.books.filter(b => S.avg.has(b.id)).sort((a, b) => S.avg.get(b.id) - S.avg.get(a.id)).slice(0, 12);
+  const fresh = [...S.books].sort((a, b) => b.id - a.id).slice(0, 12);
+  const avail = S.books.filter(b => stockOf(b.id) > 0).slice(0, 12);
+  el.innerHTML = sec('star', 'Top rated', top) + sec('sparkle', 'Just in', fresh) + sec('checkc', 'Available now', avail);
+}
+
+/* hero scene: a reading corner, drawn in the same palette as the covers */
+function nookSvg() {
+  const ys = [100, 176, 252, 328]; let bk = '', bd = '';
+  ys.forEach((y, si) => {
+    let x = 38, i = 0;
+    for (;;) {
+      const h = hash('nk' + si + '_' + i++), t = THEMES[h % 8], w = 9 + h % 8, ht = 36 + (h >> 3) % 26;
+      if (x + w > 164) break;
+      bk += `<rect x="${x}" y="${y - ht}" width="${w}" height="${ht}" rx="1.5" fill="${t.a}"/><rect x="${x}" y="${y - ht + 7}" width="${w}" height="2" fill="${t.f}" opacity=".9"/><rect x="${x}" y="${y - 9}" width="${w}" height="2" fill="${t.f}" opacity=".9"/>`;
+      x += w + 1.5;
+    }
+    bd += `<rect x="27" y="${y}" width="146" height="7" fill="#2F6D68"/>`;
+  });
+  return `<svg viewBox="0 0 560 400" role="img" aria-label="A cosy reading corner with bookshelves, an armchair and a lamp">
+    <defs><radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFE7A3" stop-opacity=".55"/><stop offset="1" stop-color="#FFE7A3" stop-opacity="0"/></radialGradient></defs>
+    <rect width="560" height="400" fill="#1A4744"/>
+    <rect y="338" width="560" height="62" fill="#0F302D"/><rect y="335" width="560" height="4" fill="#2F6D68"/>
+    <path d="M246 164V96a54 54 0 0 1 108 0v68z" fill="#22324D" stroke="#2F6D68" stroke-width="6"/>
+    <circle cx="322" cy="88" r="14" fill="#F2E8CF"/><circle cx="329" cy="83" r="12" fill="#22324D"/>
+    <circle cx="272" cy="74" r="1.8" fill="#F2E8CF"/><circle cx="286" cy="112" r="1.4" fill="#F2E8CF"/><circle cx="262" cy="130" r="1.6" fill="#F2E8CF"/>
+    <path d="M300 42v122M246 118h108" stroke="#2F6D68" stroke-width="4"/>
+    <rect x="24" y="36" width="152" height="304" rx="3" fill="#0D2B29" stroke="#2F6D68" stroke-width="5"/>
+    ${bk}${bd}
+    <path d="M44 36v-8h22v8z" fill="#A4492F"/><ellipse cx="55" cy="22" rx="5" ry="12" fill="#56704A" transform="rotate(-14 55 28)"/><ellipse cx="62" cy="24" rx="4" ry="10" fill="#6D8960" transform="rotate(18 62 30)"/>
+    <path d="M392 0v54" stroke="#E7C777" stroke-width="2"/><path d="M378 54h28l-4 20h-20z" fill="#C48A2B"/>
+    <path d="M384 74c-10 14-10 30-6 44M392 74c0 18 2 34 0 50M400 74c10 12 12 28 8 40" fill="none" stroke="#6D8960" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="470" cy="156" r="150" fill="url(#glow)"/>
+    <polygon points="440,146 500,146 560,338 390,338" fill="#FFE7A3" opacity=".07"/>
+    <ellipse cx="320" cy="352" rx="124" ry="14" fill="#C48A2B" opacity=".9"/><ellipse cx="320" cy="352" rx="96" ry="9" fill="none" stroke="#F0D58F" stroke-width="2" opacity=".7"/>
+    <rect x="262" y="176" width="116" height="118" rx="42" fill="#A24A5C"/><rect x="278" y="192" width="84" height="80" rx="30" fill="#BA6577"/>
+    <rect x="228" y="238" width="34" height="76" rx="16" fill="#8C3E50"/><rect x="378" y="238" width="34" height="76" rx="16" fill="#8C3E50"/>
+    <rect x="246" y="262" width="148" height="46" rx="14" fill="#BA6577"/><path d="M262 285h116" stroke="#F0D58F" stroke-width="2" opacity=".7"/>
+    <rect x="240" y="312" width="9" height="24" rx="2" fill="#402643"/><rect x="391" y="312" width="9" height="24" rx="2" fill="#402643"/>
+    <path d="M470 146V336" stroke="#E7C777" stroke-width="4"/><ellipse cx="470" cy="338" rx="24" ry="5" fill="#E7C777"/>
+    <polygon points="446,104 494,104 508,146 432,146" fill="#E7C777"/><polygon points="452,108 488,108 498,142 442,142" fill="#FFF0BE"/>
+    <rect x="186" y="318" width="34" height="9" rx="1.5" fill="#34496B"/><rect x="189" y="309" width="30" height="9" rx="1.5" fill="#A4492F"/><rect x="185" y="300" width="32" height="9" rx="1.5" fill="#56704A"/>
+    <path d="M512 302h32l-4 34h-24z" fill="#A4492F"/><path d="M518 302h-1" stroke="#F0D58F"/>
+    <ellipse cx="528" cy="278" rx="9" ry="26" fill="#56704A" transform="rotate(-20 528 302)"/><ellipse cx="528" cy="276" rx="9" ry="28" fill="#6D8960" transform="rotate(8 528 302)"/><ellipse cx="528" cy="280" rx="8" ry="24" fill="#3F5436" transform="rotate(28 528 302)"/>
+  </svg>`;
+}
+
+function viewHome() {
+  $('#view').innerHTML = `
+    <section class="hero"><div class="hero-in">
+      <div>
+        <h1>Borrow it. Or keep it.</h1>
+        <p>Take a book home for ${CONFIG.BORROW_DAYS} days, up to ${CONFIG.MAX_BORROWS} at a time. Late returns cost ${CONFIG.FINE_PER_DAY} a day. If every copy is out, reserve one and we'll hold your place. Prefer to keep it? Buy it at the price on the tag.</p>
+        <div class="btns"><button class="btn brass" data-act="toCatalog">${ic('library')}Browse the shelves</button>
+          ${S.user ? `<button class="btn on-dark" data-act="go" data-h="#/shelf">${ic('bookmark')}My shelf</button>` : `<button class="btn on-dark" data-act="openAuth" data-mode="register">${ic('user')}Create an account</button>`}</div>
+      </div>
+      <div class="nook">${nookSvg()}
+      </div>
+    </div></section>
+    <section class="stats" id="stats" aria-label="The library in numbers"></section>
+    <section class="quick" id="quick"></section>
+    <div class="rails" id="rails"></div>
+    <section class="tools" id="tools" aria-label="Find a book">
+      <label class="search"><span class="sr">Search by title, author or genre</span>${ic('search')}
+        <input class="field" id="q" type="search" placeholder="Search by title, author or genre" value="${esc(S.q)}" autocomplete="off"></label>
+      ${S.cats.length ? `<div class="chips" role="group" aria-label="Categories">
+        <button class="chip" data-act="chip" data-c="all" aria-pressed="${S.cat === 'all'}">All</button>
+        ${S.cats.map(c => `<button class="chip" data-act="chip" data-c="${c.id}" aria-pressed="${String(S.cat) === String(c.id)}">${esc(c.name)}</button>`).join('')}</div>` : ''}
+      <label class="check"><input type="checkbox" id="avail" ${S.onlyAvail ? 'checked' : ''}> Available now</label>
+      <div class="seg" role="group" aria-label="View">
+        <button data-act="mode" data-m="shelves" aria-pressed="${S.mode === 'shelves'}">${ic('rows')}Shelves</button>
+        <button data-act="mode" data-m="covers" aria-pressed="${S.mode === 'covers'}">${ic('grid')}Covers</button></div>
+    </section>
+    <div class="found" id="found" aria-live="polite"></div>
+    <div id="gridWrap"></div>`;
+  renderStats(); renderQuick(); renderRails(); renderGrid();
+}
+
+/* peek: a cover preview that follows the spine you point at */
+const canHover = typeof matchMedia === 'function' && matchMedia('(hover: hover)').matches;
+function showPeek(el) {
+  if (!canHover) return;
+  const b = bookById(Number(el.dataset.id)); if (!b) return;
+  const a = availInfo(b), p = $('#peek');
+  p.innerHTML = `${coverHtml(b)}<div><b>${esc(b.title)}</b><span class="by">${esc(b.author)}</span><span class="price">${money(b.price)}</span> ${ratingBit(b)}
+    <span class="av"><span class="dot ${a.cls}"></span>${a.t}${stockOf(b.id) === 0 ? '. Open to reserve.' : ''}</span></div>`;
+  p.classList.add('on');
+  const r = el.getBoundingClientRect(), pr = p.getBoundingClientRect();
+  const left = Math.min(Math.max(8, r.left + r.width / 2 - pr.width / 2), innerWidth - pr.width - 8);
+  let top = r.top - pr.height - 14; if (top < 100) top = r.bottom + 14;
+  p.style.left = left + 'px'; p.style.top = top + 'px';
+}
+function hidePeek() { const p = $('#peek'); if (p) p.classList.remove('on'); }
+
+/* ---------- Book page ---------- */
+function initBook(id) {
+  if (S.bp && S.bp.id === id && !S.bp.stale) return;
+  S.bp = { id, reviews: null, avg: null, loading: true, error: null };
+  loadReviews(id);
+}
+async function loadReviews(id) {
+  if (!S.bp || S.bp.id !== id) S.bp = { id, reviews: null, avg: null, loading: true, error: null };
+  try {
+    const [rv, av] = await Promise.all([api(`/api/reviews/book/${id}`, { auth: false }), api(`/api/reviews/book/${id}/average`, { auth: false })]);
+    if (!S.bp || S.bp.id !== id) return;
+    S.bp.reviews = rv || []; S.bp.avg = av && typeof av.averageRating === 'number' ? av.averageRating : null; S.bp.error = null;
+    if (S.bp.avg === null) S.avg.delete(id); else S.avg.set(id, S.bp.avg);
+  } catch (e) { if (S.bp && S.bp.id === id) S.bp.error = e.message; }
+  if (S.bp && S.bp.id === id) { S.bp.loading = false; if (S.view === 'book' && S.bookId === id) renderView(); }
+}
+function moreRail(title, icon, list) {
+  return list.length ? `<section class="rail-sec"><h2 class="disp">${ic(icon)}${title}</h2><div class="rail">${list.slice(0, 12).map(railCard).join('')}</div></section>` : '';
+}
+function viewBook() {
+  const view = $('#view'), back = `<button class="back" data-act="back">${ic('arrowL')}Back</button>`;
+  if (S.loading) { view.innerHTML = `<div class="bookpage">${back}<p class="pad">Loading the book…</p></div>`; return; }
+  const b = bookById(S.bookId);
+  if (!b) { view.innerHTML = `<div class="bookpage">${back}<div class="note" style="padding:0"><div class="box"><h2 class="disp">Book not found</h2><p>This book isn't in the catalog any more.</p><button class="btn" data-act="go" data-h="#/">${ic('library')}Back to the shelves</button></div></div></div>`; return; }
+  const p = S.bp && S.bp.id === b.id ? S.bp : { loading: true }, n = stockOf(b.id), a = availInfo(b);
+  const mine = S.user && (p.reviews || []).find(r => r.client && r.client.email === S.user.email);
+  let actions = '', hint = '';
+  if (n === null) { actions = `<button class="btn" disabled>${ic('book')}Borrow for ${CONFIG.BORROW_DAYS} days</button>`; hint = 'This book has no stock record yet, so it can\'t be borrowed or bought.'; }
+  else if (n > 0) actions = `<button class="btn" data-act="borrow" data-id="${b.id}">${ic('book')}Borrow for ${CONFIG.BORROW_DAYS} days</button>
+      <button class="btn brass" data-act="addCart" data-id="${b.id}">${ic('cart')}Add to cart</button>`;
+  else { actions = `<button class="btn" data-act="reserve" data-id="${b.id}">${ic('hourglass')}Reserve a copy</button>
+      <button class="btn brass" disabled>${ic('cart')}Add to cart</button>`; hint = 'Every copy is out. Reserve a copy and it shows up on your shelf when one comes back.'; }
+  if (isAdmin()) actions += `<button class="btn ghost" data-act="editBook" data-id="${b.id}">${ic('edit')}Edit this book</button>`;
+
+  const revs = p.reviews || [], counts = [5, 4, 3, 2, 1].map(s => revs.filter(r => r.rating === s).length), mx = Math.max(1, ...counts);
+  const ratebox = p.loading ? '<p class="hint">Loading ratings…</p>' : p.error ? `<p class="err">${esc(p.error)}</p>` :
+    `<div class="ratebox"><div><div class="big">${typeof p.avg === 'number' ? p.avg.toFixed(1) : '–'}</div>${typeof p.avg === 'number' ? stars(Math.round(p.avg)) : ''}<div class="hint">${revs.length} ${revs.length === 1 ? 'review' : 'reviews'}</div></div>
+      <div>${counts.map((c, i) => `<div class="bar"><span>${5 - i} ${ic('star', 'fill')}</span><i><b style="width:${Math.round(c / mx * 100)}%"></b></i><span>${c}</span></div>`).join('')}</div></div>`;
+  const revList = p.loading ? '' : (revs.length ? revs.map(r => `<div class="review">${stars(r.rating)} <small>${esc(r.client && r.client.fullName)}, ${fmt(r.createdAt)}</small>${r.comment ? `<p>${esc(r.comment)}</p>` : ''}</div>`).join('')
+    : '<p class="hint">No reviews yet. Borrow or buy this book to write the first one.</p>');
+  const rating = mine ? mine.rating : 0;
+  const form = !S.user ? `<p class="hint"><button class="link" data-act="openAuth" data-mode="login">Sign in</button> to review this book.</p>`
+    : `<form class="f" data-form="review" data-id="${b.id}" data-rid="${mine ? mine.id : ''}">
+        <fieldset class="rate" aria-label="Your rating">${[1,2,3,4,5].map(i =>
+          `<input type="radio" name="rating" id="r${i}" value="${i}" ${rating === i ? 'checked' : ''}><label for="r${i}" class="${i <= rating ? 'on' : ''}" title="${i} out of 5">★</label>`).join('')}</fieldset>
+        <label class="l">Comment <span class="hint" style="margin:0">(optional)</span><textarea class="field" name="comment" maxlength="1000">${esc(mine ? mine.comment : '')}</textarea></label>
+        <p class="err" id="formErr"></p>
+        <div class="actions"><button class="btn" type="submit">${ic('check')}${mine ? 'Update review' : 'Post review'}</button>
+          ${mine ? `<button type="button" class="btn danger" data-act="delReview" data-id="${mine.id}">${ic('trash')}Delete review</button>` : ''}</div></form>`;
+
+  const sameAuthor = S.books.filter(x => x.id !== b.id && (x.author || '').toLowerCase() === (b.author || '').toLowerCase());
+  const sameCat = S.books.filter(x => x.id !== b.id && b.category && x.category && x.category.id === b.category.id && !sameAuthor.includes(x));
+  view.innerHTML = `<div class="bookpage">${back}
+    <div class="bp-grid">
+      <aside class="bp-side">${coverHtml(b)}<div><div class="actions">${actions}</div>${hint ? `<p class="hint">${hint}</p>` : ''}</div></aside>
+      <div class="bp-main">
+        <h1>${esc(b.title)}</h1>
+        <p class="by" style="font-size:1.1rem">by ${esc(b.author)}</p>
+        <div class="pills">${b.category ? `<span class="pill">${ic('layers')}${esc(b.category.name)}</span>` : ''}${b.genre ? `<span class="pill">${ic('tag')}${esc(b.genre)}</span>` : ''}
+          <span class="pill"><span class="dot ${a.cls}" style="margin:0"></span>${a.t}</span></div>
+        <div class="bigp"><span class="price">${money(b.price)}</span>${typeof p.avg === 'number' ? `<span class="rate-s">${ic('star')}${p.avg.toFixed(1)}</span>` : ''}</div>
+        <p class="desc">${esc(b.description) || 'No description yet.'}</p>
+        <dl class="facts">
+          <dt>Published</dt><dd>${esc(b.publicationYear)}${b.publisher ? ` by ${esc(b.publisher)}` : ''}</dd>
+          <dt>ISBN</dt><dd>${esc(b.isbn)}</dd></dl>
+        <div class="sec"><h2 class="disp">${ic('star')}Ratings</h2>${ratebox}${revList}</div>
+        <div class="sec"><h2 class="disp">${ic('msg')}${mine ? 'Your review' : 'Write a review'}</h2>${form}</div>
+      </div>
+    </div>
+    <div class="more">${moreRail(`More by ${esc(b.author)}`, 'user', sameAuthor)}${moreRail(`More in ${b.category ? esc(b.category.name) : ''}`, 'layers', sameCat)}</div></div>`;
+}
+
+/* ---------- My shelf ---------- */
+function tagFor(status) {
+  const m = { ACTIVE:['','Borrowed'], RETURNED:['ok','Returned'], OVERDUE:['late','Overdue'], WAITING:['wait','Waiting'],
+              FULFILLED:['ok','Ready'], CANCELLED:['','Cancelled'], PENDING:['wait','Pending'], COMPLETED:['ok','Completed'] }[status] || ['', status];
+  return `<span class="tag ${m[0]}">${m[1]}</span>`;
+}
+const thumb = b => coverHtml(b || null, 'mini');
+function errBlock(x) { return x && x.__err ? `<p class="err pad">${esc(x.__err)}</p>` : null; }
+
+function shelfBorrows(list) {   /* loan history: returned books */
+  if (errBlock(list)) return errBlock(list);
+  const done = (Array.isArray(list) ? list : []).filter(r => r.status === 'RETURNED');
+  if (!done.length) return `<p class="pad">Nothing returned yet. Books you give back are listed here.</p>`;
+  return [...done].sort((a, b) => b.id - a.id).map(r => {
+    const bk = r.book || {};
+    return `<article class="dueslip is-done">${thumb(bk)}
+      <div><h4><button class="link" data-act="openBook" data-id="${bk.id}">${esc(bk.title)}</button></h4>
+        <p class="typed">Borrowed ${fmt(r.borrowDate)}</p><p class="typed">Returned ${fmt(r.returnDate)}</p>
+        ${r.fineAmount > 0 ? `<p class="typed">Fine charged: ${money(r.fineAmount)}</p>` : ''}</div>
+      <div class="ds-side"><span class="stamp-t ok">Returned</span></div></article>`;
+  }).join('');
+}
+const PLANT = `<svg class="plant" viewBox="0 0 80 110" aria-hidden="true"><path d="M22 74h36l-5 34H27z" fill="#A4492F"/><path d="M22 74h36" stroke="#F0D58F" stroke-width="3"/>
+  <ellipse cx="40" cy="48" rx="9" ry="30" fill="#56704A" transform="rotate(-24 40 76)"/><ellipse cx="40" cy="44" rx="9" ry="32" fill="#6D8960"/><ellipse cx="40" cy="48" rx="8" ry="28" fill="#3F5436" transform="rotate(26 40 76)"/></svg>`;
+function bookcaseHtml(list) {
+  if (errBlock(list)) return errBlock(list);
+  const act = (Array.isArray(list) ? list : []).filter(r => r.status !== 'RETURNED').sort((a, b) => a.id - b.id);
+  const seen = new Set(store.get('lib.seenLoans', []));
+  store.set('lib.seenLoans', [...new Set([...seen, ...act.map(r => r.id)])].slice(-300));
+  const perRow = innerWidth < 640 ? 3 : 4, free = Math.max(0, CONFIG.MAX_BORROWS - act.length);
+  const items = [...act.map(r => ({ r })), ...Array.from({ length: free }, () => ({ ghost: true }))];
+  const rows = []; for (let i = 0; i < items.length; i += perRow) rows.push(items.slice(i, i + perRow));
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  let k = 0;
+  const rowHtml = (row, ri) => {
+    const cols = row.map(it => {
+      if (it.ghost) return `<div class="freeslot" aria-hidden="true"><span>Free<br>slot</span></div>`;
+      const r = it.r, b = r.book || {}, dl = daysLate(r.dueDate), d = toDate(r.dueDate), left = d ? Math.round((d - today) / 864e5) : 9;
+      const idx = k++;
+      return `<div class="col${seen.has(r.id) ? '' : ' drop'}" data-b="${r.id}" style="--i:${idx};--tilt:${['-1.4deg', '.9deg', '-.5deg', '1.2deg'][idx % 4]}">
+        <button class="bk" data-act="openBook" data-id="${b.id}" aria-label="${esc(b.title)}, due ${fmt(r.dueDate)}">${coverHtml(b)}<i class="rib ${dl ? 'late' : left <= 3 ? 'soon' : ''}"></i></button></div>`;
+    }).join('');
+    const real = row.filter(it => !it.ghost);
+    const tags = real.length ? `<div class="tags">${row.map(it => {
+      if (it.ghost) return '<div class="tagc-ph"></div>';
+      const r = it.r, dl = daysLate(r.dueDate), d = toDate(r.dueDate), left = d ? Math.round((d - today) / 864e5) : 0;
+      return `<div class="tagc ${dl ? 'late' : ''}" data-b="${r.id}"><b>Due ${fmtShort(r.dueDate)}</b>
+        <span class="st">${dl ? `${dl} ${dl === 1 ? 'day' : 'days'} late` : left <= 0 ? 'Due today' : `${left} ${left === 1 ? 'day' : 'days'} left`}</span>
+        ${dl ? `<span class="fine">+${money(dl * CONFIG.FINE_PER_DAY)} if returned today</span>` : ''}
+        <button class="btn sm" data-act="returnBook" data-id="${r.id}">${ic('undo')}Return</button></div>`;
+    }).join('')}</div>` : '';
+    return `<div class="stage"><i class="bend l"></i><i class="bend r"></i>${ri === 0 && act.length <= 2 ? PLANT : ''}${cols}</div><div class="board"></div>${tags}`;
+  };
+  const empty = !act.length ? `<div class="emptymsg"><div><b>Your shelf is empty.</b>Borrow a book and it's placed here, with its due date on a card below it.</div>
+    <button class="btn brass sm" data-act="go" data-h="#/">${ic('library')}Browse the shelves</button></div>` : '';
+  return `<section class="bookcase" aria-label="Books you've borrowed">
+    <div class="bc-head"><div class="plate">Your shelf<span>${act.length} of ${CONFIG.MAX_BORROWS} slots used</span></div>
+      <div class="slots" aria-hidden="true">${Array.from({ length: Math.max(CONFIG.MAX_BORROWS, act.length) }, (_, i) => `<i class="${i < act.length ? 'on' : ''}"></i>`).join('')}</div></div>
+    <div class="bc-in">${rows.map(rowHtml).join('')}${empty}</div></section>`;
+}
+function shelfReservations(list) {
+  if (errBlock(list)) return errBlock(list);
+  if (!list || !list.length) return `<p class="pad">No reservations. When every copy of a book is out, reserve it and it will show up here.</p>`;
+  return [...list].sort((a, b) => b.id - a.id).map(r => {
+    const bk = r.book || {};
+    return `<div class="row">${thumb(bk)}
+      <div><h4><button class="link" data-act="openBook" data-id="${bk.id}">${esc(bk.title)}</button></h4>
+        <p>Reserved ${fmt(r.reservationDate)}.${r.status === 'FULFILLED' ? ' A copy is back. Borrow it from the book page.' : ''}</p></div>
+      <div class="end">${tagFor(r.status)}${r.status === 'FULFILLED' ? `<button class="btn sm" data-act="openBook" data-id="${bk.id}">${ic('book')}Borrow</button>` : ''}${r.status === 'WAITING' ? `<button class="btn ghost sm" data-act="cancelRes" data-id="${r.id}">${ic('x')}Cancel</button>` : ''}</div></div>`;
+  }).join('');
+}
+function shelfOrders(list) {
+  if (errBlock(list)) return errBlock(list);
+  if (!list || !list.length) return `<p class="pad">No orders yet. Add books to your cart to buy a copy of your own.</p>`;
+  return [...list].sort((a, b) => b.id - a.id).map(o => {
+    const items = (o.items || []).map(i => `${i.quantity} × ${esc(i.book && i.book.title)}`).join(', ');
+    const first = o.items && o.items[0] && o.items[0].book;
+    return `<div class="row">${thumb(first)}
+      <div><h4>Order ${o.id}</h4><p>${fmt(o.createdAt)}</p><p>${items}</p></div>
+      <div class="end">${tagFor(o.status)}<b>${money(o.totalPrice)}</b></div></div>`;
+  }).join('');
+}
+function shelfReviews(list) {
+  if (errBlock(list)) return errBlock(list);
+  if (!list || !list.length) return `<p class="pad">You haven't reviewed anything. You can review a book once you've borrowed or bought it.</p>`;
+  return [...list].sort((a, b) => b.id - a.id).map(r => {
+    const bk = r.book || {};
+    return `<div class="row">${thumb(bk)}
+      <div><h4><button class="link" data-act="openBook" data-id="${bk.id}">${esc(bk.title)}</button></h4>
+        <p>${stars(r.rating)}</p>${r.comment ? `<p>${esc(r.comment)}</p>` : ''}</div>
+      <div class="end"><button class="btn ghost sm" data-act="openBook" data-id="${bk.id}">${ic('edit')}Edit</button>
+        <button class="btn danger sm" data-act="delReview" data-id="${r.id}">${ic('trash')}Delete</button></div></div>`;
+  }).join('');
+}
+function viewShelf() {
+  if (!S.token) {
+    $('#view').innerHTML = `<div class="wrap"><h1>${ic('bookmark')}My shelf</h1><div class="note" style="padding:0;margin-top:22px"><div class="box">
+      <h2 class="disp">Sign in to see your shelf</h2><p>Your borrowed books, reservations, orders and reviews live here.</p>
+      <button class="btn" data-act="openAuth" data-mode="login">${ic('login')}Sign in</button></div></div></div>`;
+    return;
+  }
+  const sh = S.shelf;
+  if (!sh.loaded) {
+    $('#view').innerHTML = `<div class="wrap"><h1>${ic('bookmark')}My shelf</h1><p class="pad">${sh.loading ? 'Loading your shelf…' : ''}</p></div>`;
+    if (!sh.loading) loadShelf();
+    return;
+  }
+  const d = sh.data, s = d.summary && !d.summary.__err ? d.summary : null;
+  const tabs = [['borrows','Loan history','undo'],['reservations','Reserved','hourglass'],['orders','Orders','bag'],['reviews','Reviews','msg']];
+  const body = { borrows: shelfBorrows, reservations: shelfReservations, orders: shelfOrders, reviews: shelfReviews }[S.shelfTab](d[S.shelfTab]);
+  $('#view').innerHTML = `<div class="wrap"><h1>${ic('bookmark')}My shelf</h1>
+    <p class="by">${esc(S.user.fullName || '')}${S.user.fullName ? ', ' : ''}${esc(S.user.email)}</p>
+    ${bookcaseHtml(d.borrows)}
+    ${s ? `<div class="sum">
+      <div><b>${s.activeBorrows} of ${CONFIG.MAX_BORROWS}</b><span>Borrowed now</span></div>
+      <div><b>${money(s.totalFinesAccumulated)}</b><span>Fines so far</span></div>
+      <div><b>${s.activeReservations}</b><span>On waitlists</span></div>
+      <div><b>${s.totalOrders}</b><span>Orders</span></div>
+      <div><b>${money(s.totalSpent)}</b><span>Spent</span></div>
+      <div><b>${s.totalReviews}</b><span>Reviews</span></div></div>` : ''}
+    <div class="tabs" role="tablist">${tabs.map(([k, l, i]) =>
+      `<button role="tab" data-act="tab" data-t="${k}" aria-selected="${S.shelfTab === k}">${ic(i)}${l}</button>`).join('')}</div>
+    <div>${body}</div></div>`;
+}
+
+/* ---------- Admin ---------- */
+const ADMIN_TABS = [['books','Books','book'],['categories','Categories','layers'],['stock','Stock','box'],['loans','Loans','undo'],['orders','Orders','bag'],['reservations','Reservations','hourglass'],['members','Members','users']];
+async function loadAdmin(tab) {
+  const A = S.adm; A.err = null; A.loading = true;
+  if (S.view === 'admin') renderAdminBody();
+  try {
+    if (tab === 'stock') { await refreshStock(); }
+    if (tab === 'loans' || tab === 'members') A.loans = await api('/api/borrows');
+    if (tab === 'orders' || tab === 'members') A.orders = await api('/api/orders');
+    if (tab === 'reservations' || tab === 'members') A.res = await api('/api/reservations');
+  } catch (e) { A.err = e.message; }
+  A.loading = false;
+  if (S.view === 'admin' && S.adminTab === tab) renderAdminBody();
+}
+function viewAdmin() {
+  if (!isAdmin()) { $('#view').innerHTML = `<div class="adm"><h1>${ic('shield')}Admin</h1><p class="pad">This area is for admin accounts.</p></div>`; return; }
+  $('#view').innerHTML = `<div class="adm"><h1>${ic('shield')}Admin</h1>
+    <p class="by">Manage the catalog, stock and everything members are doing.</p>
+    <div class="tabs" role="tablist" style="margin-top:18px">${ADMIN_TABS.map(([k, l, i]) =>
+      `<button role="tab" data-act="admTab" data-t="${k}" aria-selected="${S.adminTab === k}">${ic(i)}${l}</button>`).join('')}</div>
+    <div id="admBody"></div></div>`;
+  renderAdminBody();
+}
+const tbl = (head, rows, empty) => rows.length
+  ? `<div class="tblw"><table class="tbl"><thead><tr>${head.map(h => `<th${h[1] ? ` class="${h[1]}"` : ''}>${h[0]}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`
+  : `<p class="pad">${empty}</p>`;
+const person = c => c ? `<b>${esc(c.fullName)}</b><br><small>${esc(c.email)}</small>` : '';
+function renderAdminBody() {
+  const el = $('#admBody'); if (!el) return;
+  const A = S.adm, t = S.adminTab;
+  if (A.err) { el.innerHTML = `<p class="err pad">${esc(A.err)}</p>`; return; }
+  if (A.loading && ['loans', 'orders', 'reservations', 'members'].includes(t)) { el.innerHTML = `<p class="pad">Loading…</p>`; return; }
+  if (t === 'books') {
+    el.innerHTML = `<div class="tbar"><label class="search"><span class="sr">Filter books</span>${ic('search')}<input class="field" id="aq" type="search" placeholder="Filter books" value="${esc(S.admQ)}"></label>
+      <span class="grow"></span><button class="btn" data-act="newBook">${ic('plus')}Add a book</button></div><div id="admTable"></div>`;
+  } else if (t === 'categories') {
+    el.innerHTML = `<div class="tbar"><span class="grow"></span><button class="btn" data-act="newCat">${ic('plus')}Add a category</button></div><div id="admTable"></div>`;
+  } else if (t === 'loans') {
+    el.innerHTML = `<div class="tbar"><label class="check">Show <select class="field" id="lf" style="width:auto">${[['ALL','All loans'],['ACTIVE','Active'],['OVERDUE','Overdue'],['RETURNED','Returned']].map(([v, l]) => `<option value="${v}" ${S.loanFilter === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div><div id="admTable"></div>`;
+  } else if (t === 'members') { el.innerHTML = membersHtml(); return; }
+  else el.innerHTML = `<div id="admTable"></div>`;
+  renderAdminTable();
+}
+function renderAdminTable() {
+  const el = $('#admTable'); if (!el) return;
+  const A = S.adm, t = S.adminTab;
+  if (t === 'books') {
+    const q = S.admQ.toLowerCase(), list = S.books.filter(b => !q || [b.title, b.author, b.genre].some(v => (v || '').toLowerCase().includes(q)));
+    el.innerHTML = tbl([['Book'], ['Category'], ['Year', 'num'], ['Price', 'num'], ['In stock', 'num'], ['', 'num']], list.map(b => `<tr>
+      <td><b>${esc(b.title)}</b><br><small>${esc(b.author)}</small></td><td>${b.category ? esc(b.category.name) : '<small>None</small>'}</td>
+      <td class="num">${esc(b.publicationYear)}</td><td class="num">${money(b.price)}</td><td class="num">${stockOf(b.id) ?? '<small>none</small>'}</td>
+      <td><div class="acts"><button class="ib" data-act="openBook" data-id="${b.id}" aria-label="View ${esc(b.title)}">${ic('eye')}</button>
+        <button class="ib" data-act="editBook" data-id="${b.id}" aria-label="Edit ${esc(b.title)}">${ic('edit')}</button>
+        <button class="ib danger" data-act="delBook" data-id="${b.id}" aria-label="Delete ${esc(b.title)}">${ic('trash')}</button></div></td></tr>`), 'No books match.');
+  } else if (t === 'categories') {
+    el.innerHTML = tbl([['Name'], ['Description'], ['Books', 'num'], ['', 'num']], S.cats.map(c => `<tr>
+      <td><b>${esc(c.name)}</b></td><td>${esc(c.description) || '<small>None</small>'}</td><td class="num">${S.books.filter(b => b.category && b.category.id === c.id).length}</td>
+      <td><div class="acts"><button class="ib" data-act="editCat" data-id="${c.id}" aria-label="Edit ${esc(c.name)}">${ic('edit')}</button>
+        <button class="ib danger" data-act="delCat" data-id="${c.id}" aria-label="Delete ${esc(c.name)}">${ic('trash')}</button></div></td></tr>`), 'No categories yet.');
+  } else if (t === 'stock') {
+    const rec = new Map(S.inventory.map(i => [i.book && i.book.id, i]));
+    el.innerHTML = tbl([['Book'], ['Copies available', 'num'], ['', 'num']], S.books.map(b => { const i = rec.get(b.id); return `<tr>
+      <td><b>${esc(b.title)}</b><br><small>${esc(b.author)}</small></td>
+      <td class="num"><input class="nin" type="number" min="0" value="${i ? i.availableCopies : 1}" aria-label="Copies of ${esc(b.title)}"></td>
+      <td><div class="acts">${i ? `<button class="btn sm" data-act="saveStock" data-id="${i.id}">${ic('check')}Save</button><button class="ib danger" data-act="delStock" data-id="${i.id}" aria-label="Remove stock record">${ic('trash')}</button>`
+        : `<button class="btn brass sm" data-act="addStock" data-id="${b.id}">${ic('plus')}Create stock record</button>`}</div></td></tr>`; }), 'Add a book first.');
+  } else if (t === 'loans') {
+    const list = (A.loans || []).filter(r => S.loanFilter === 'ALL' || r.status === S.loanFilter || (S.loanFilter === 'OVERDUE' && r.status !== 'RETURNED' && daysLate(r.dueDate) > 0));
+    el.innerHTML = tbl([['Member'], ['Book'], ['Borrowed'], ['Due'], ['Returned'], ['Status'], ['Fine', 'num']], [...list].sort((a, b) => b.id - a.id).map(r => {
+      const dl = r.status !== 'RETURNED' ? daysLate(r.dueDate) : 0;
+      return `<tr><td>${person(r.client)}</td><td>${esc(r.book && r.book.title)}</td><td>${fmt(r.borrowDate)}</td><td>${fmt(r.dueDate)}</td><td>${fmt(r.returnDate)}</td>
+      <td>${dl ? '<span class="tag late">Overdue</span>' : tagFor(r.status)}</td><td class="num">${r.fineAmount > 0 ? money(r.fineAmount) : dl ? `<small>${money(dl * CONFIG.FINE_PER_DAY)} so far</small>` : ''}</td></tr>`; }), 'No loans match.');
+  } else if (t === 'orders') {
+    el.innerHTML = tbl([['Order'], ['Member'], ['Items'], ['Placed'], ['Status'], ['Total', 'num']], [...(A.orders || [])].sort((a, b) => b.id - a.id).map(o => `<tr>
+      <td><b>#${o.id}</b></td><td>${person(o.client)}</td><td>${(o.items || []).map(i => `${i.quantity} × ${esc(i.book && i.book.title)}`).join('<br>')}</td>
+      <td>${fmt(o.createdAt)}</td><td>${tagFor(o.status)}</td><td class="num"><b>${money(o.totalPrice)}</b></td></tr>`), 'No orders yet.');
+  } else if (t === 'reservations') {
+    el.innerHTML = tbl([['Member'], ['Book'], ['Reserved'], ['Status']], [...(A.res || [])].sort((a, b) => b.id - a.id).map(r => `<tr>
+      <td>${person(r.client)}</td><td>${esc(r.book && r.book.title)}</td><td>${fmt(r.reservationDate)}</td><td>${tagFor(r.status)}</td></tr>`), 'No reservations yet.');
+  }
+}
+function membersHtml() {
+  const A = S.adm, seen = new Map();
+  [...(A.loans || []), ...(A.orders || []), ...(A.res || [])].forEach(r => { if (r.client) seen.set(r.client.id, r.client); });
+  const m = A.member;
+  const summary = m ? `<div class="statgrid">
+    <div><b>${esc(m.totalOrders)}</b><span>Orders</span></div><div><b>${money(m.totalSpent)}</b><span>Spent</span></div>
+    <div><b>${esc(m.activeBorrows)} / ${esc(m.totalBorrows)}</b><span>Borrows (active / all)</span></div><div><b>${money(m.totalFinesAccumulated)}</b><span>Fines</span></div>
+    <div><b>${esc(m.activeReservations)} / ${esc(m.totalReservations)}</b><span>Reservations (active / all)</span></div><div><b>${esc(m.totalReviews)}</b><span>Reviews</span></div></div>` : '';
+  return `<div class="two">
+    <div class="card"><h2 class="disp">${ic('users')}Member activity</h2>
+      ${seen.size ? `<div class="mlist">${[...seen.values()].map(c => `<button class="chip" data-act="member" data-id="${c.id}">${esc(c.fullName)}</button>`).join('')}</div>` : '<p class="hint">Members who borrowed, ordered or reserved will show up here.</p>'}
+      <form class="f" data-form="member" style="grid-template-columns:1fr auto;align-items:end"><label class="l">Or look up a member by id<input class="field" name="id" type="number" min="1" required></label><button class="btn" type="submit">${ic('search')}Look up</button></form>
+      ${m ? `<h3 class="disp" style="margin-top:20px">${esc(m.fullName)}</h3><p class="by" style="margin:0">${esc(m.email)} (id ${esc(m.clientId)})</p>${summary}` : ''}
+      <p class="err" id="mErr" style="margin-top:10px">${esc(A.memberErr || '')}</p></div>
+    <div class="card"><h2 class="disp">${ic('shield')}Create an admin</h2>
+      <form class="f" data-form="newadmin">
+        <label class="l">Full name<input class="field" name="fullName" required></label>
+        <label class="l">Email<input class="field" type="email" name="email" required></label>
+        <label class="l">Password<input class="field" type="password" name="password" required minlength="6" autocomplete="new-password"></label>
+        <p class="err" id="formErr"></p><button class="btn" type="submit">${ic('plus')}Create admin</button></form></div></div>`;
+}
+
+/* admin forms live in the side panel */
+function openForm(title, fields, submit, onSubmit) { S.panel = { type: 'form', title, fields, submit, onSubmit }; renderPanel(); openPanelUI(); }
+function bookForm(b) {
+  const catOpts = [{ v: '', t: 'No category' }, ...S.cats.map(c => ({ v: c.id, t: c.name }))];
+  const fields = [
+    { n: 'title', l: 'Title', req: 1, v: b && b.title }, { n: 'author', l: 'Author', req: 1, v: b && b.author },
+    { n: 'publicationYear', l: 'Publication year', type: 'number', req: 1, v: b && b.publicationYear },
+    { n: 'publisher', l: 'Publisher', v: b && b.publisher }, { n: 'genre', l: 'Genre', v: b && b.genre },
+    { n: 'categoryId', l: 'Category', type: 'select', opts: catOpts, v: b && b.category && b.category.id },
+    { n: 'price', l: 'Price', type: 'number', step: '0.01', req: 1, v: b && b.price },
+    { n: 'description', l: 'Description', type: 'textarea', v: b && b.description }];
+  if (!b) fields.push({ n: 'copies', l: 'Copies in stock', type: 'number', min: 0, v: 1, hint: 'Creates the stock record so the book can be borrowed right away.' });
+  openForm(b ? 'Edit book' : 'Add a book', fields, b ? 'Save changes' : 'Add book', async v => {
+    const body = { title: v.title, author: v.author, publicationYear: v.publicationYear, publisher: v.publisher, genre: v.genre, categoryId: v.categoryId ? Number(v.categoryId) : null, price: v.price, description: v.description };
+    if (b) { await api(`/api/books/${b.id}`, { method: 'PUT', body }); toast('Book updated.'); }
+    else {
+      const nb = await api('/api/books', { method: 'POST', body });
+      try { await api('/api/inventory', { method: 'POST', body: { bookId: nb.id, availableCopies: v.copies == null ? 1 : v.copies } }); }
+      catch (e) { toast('Book added, but its stock record failed: ' + e.message, 'err'); }
+      toast('Book added.');
+    }
+    closePanel(); await loadCatalog();
+  });
+}
+function catForm(c) {
+  openForm(c ? 'Edit category' : 'Add a category', [{ n: 'name', l: 'Name', req: 1, v: c && c.name }, { n: 'description', l: 'Description', type: 'textarea', v: c && c.description }],
+    c ? 'Save changes' : 'Add category', async v => {
+      if (c) await api(`/api/categories/${c.id}`, { method: 'PUT', body: v }); else await api('/api/categories', { method: 'POST', body: v });
+      toast(c ? 'Category updated.' : 'Category added.'); closePanel(); await loadCatalog();
+    });
+}
+function fieldHtml(f) {
+  const id = 'f_' + f.n, v = f.v == null ? '' : f.v, req = f.req ? ' required' : '';
+  let ctl;
+  if (f.type === 'textarea') ctl = `<textarea class="field" id="${id}" name="${f.n}"${req}>${esc(v)}</textarea>`;
+  else if (f.type === 'select') ctl = `<select class="field" id="${id}" name="${f.n}">${f.opts.map(o => `<option value="${esc(o.v)}"${String(o.v) === String(v) ? ' selected' : ''}>${esc(o.t)}</option>`).join('')}</select>`;
+  else ctl = `<input class="field" id="${id}" name="${f.n}" type="${f.type || 'text'}" value="${esc(v)}"${req}${f.step ? ` step="${f.step}"` : ''}${f.min != null ? ` min="${f.min}"` : ''}>`;
+  return `<label class="l">${esc(f.l)}${ctl}${f.hint ? `<span class="hint" style="margin:0">${esc(f.hint)}</span>` : ''}</label>`;
+}
+
+/* ---------- Panel (cart, sign in, admin forms) ---------- */
+function openPanelUI() {
+  const p = $('#panel'); hidePeek();
+  if (!p.classList.contains('on')) S.lastFocus = document.activeElement;
+  p.classList.add('on'); $('#scrim').classList.add('on');
+  setTimeout(() => { const f = S.panel && ['auth', 'form'].includes(S.panel.type) ? $('#pBody input, #pBody textarea') : $('.x', p); f && f.focus(); }, 60);
+}
+function closePanel() {
+  S.panel = null; S.afterAuth = null;
+  $('#panel').classList.remove('on'); $('#scrim').classList.remove('on');
+  if (S.lastFocus && S.lastFocus.isConnected) S.lastFocus.focus();
+}
+function renderPanel() {
+  const p = S.panel; if (!p) return;
+  const [title, html] = p.type === 'cart' ? cartPanel() : p.type === 'form' ? [p.title, `<form class="f" data-form="admin">${p.fields.map(fieldHtml).join('')}<p class="err" id="formErr"></p>
+      <div class="actions"><button class="btn" type="submit">${ic('check')}${esc(p.submit)}</button><button type="button" class="btn ghost" data-act="closePanel">Cancel</button></div></form>`] : authPanel(p);
+  $('#pTitle').textContent = title; $('#pBody').innerHTML = html;
+}
+function cartPanel() {
+  const rows = S.cart.map(i => ({ ...i, b: bookById(i.bookId) })).filter(r => r.b);
+  if (!rows.length) return ['Your cart', `<p class="pad">Your cart is empty. Books you add appear here.</p><button class="btn ghost" data-act="closePanel">${ic('library')}Keep browsing</button>`];
+  const total = rows.reduce((a, r) => a + r.b.price * r.qty, 0);
+  return ['Your cart', rows.map(r => `<div class="row">${thumb(r.b)}
+      <div><h4>${esc(r.b.title)}</h4><p>${money(r.b.price)} each</p></div>
+      <div class="end"><div class="qty"><button data-act="qty" data-d="-1" data-id="${r.bookId}" aria-label="One fewer">−</button><span>${r.qty}</span><button data-act="qty" data-d="1" data-id="${r.bookId}" aria-label="One more">+</button></div>
+      <button class="ib" data-act="rmCart" data-id="${r.bookId}" aria-label="Remove ${esc(r.b.title)}">${ic('trash')}</button></div></div>`).join('') +
+    `<div class="total"><span>Total</span><b>${money(total)}</b></div>
+     <button class="btn brass" style="width:100%" data-act="checkout">${ic('bag')}Place order</button>
+     <p class="hint">Copies are taken from stock when the order goes through.</p>`];
+}
+function authPanel(p) {
+  const login = p.mode === 'login';
+  return [login ? 'Sign in' : 'Create an account', `
+    <div class="tabs" role="tablist">
+      <button role="tab" data-act="openAuth" data-mode="login" aria-selected="${login}">${ic('login')}Sign in</button>
+      <button role="tab" data-act="openAuth" data-mode="register" aria-selected="${!login}">${ic('user')}Create account</button></div>
+    ${p.note ? `<p class="hint" style="margin:0 0 16px">${esc(p.note)}</p>` : ''}
+    <form class="f" data-form="auth" data-mode="${p.mode}">
+      ${login ? '' : `<label class="l">Full name<input class="field" name="fullName" required autocomplete="name"></label>`}
+      <label class="l">Email<input class="field" type="email" name="email" required autocomplete="email"></label>
+      <label class="l">Password<input class="field" type="password" name="password" required ${login ? '' : 'minlength="6"'} autocomplete="${login ? 'current-password' : 'new-password'}"></label>
+      ${login ? '' : `<p class="hint" style="margin:0">At least 6 characters.</p>`}
+      <p class="err" id="formErr"></p>
+      <button class="btn" type="submit">${ic(login ? 'login' : 'plus')}${login ? 'Sign in' : 'Create account'}</button></form>`];
+}
+
+/* ---------- Actions ---------- */
+function needAuth(note, after) { S.afterAuth = after; openAuth('login', note); }
+function openAuth(mode, note) { const keep = S.afterAuth; S.panel = { type: 'auth', mode, note }; S.afterAuth = keep; renderPanel(); openPanelUI(); }
+function openCart() { S.panel = { type: 'cart' }; renderPanel(); openPanelUI(); }
+async function afterChange(bookId) {
+  await refreshStock(); afterAccountChange();
+  if (S.view === 'book') renderView(); else if (S.view === 'catalog') { renderStats(); renderRails(); renderGrid(); }
+}
+const reloadBp = id => { if (S.bp) S.bp.stale = true; return loadReviews(id); };
+
+const H = {
+  nav: (t) => go(t.dataset.v === 'catalog' ? '#/' : '#/' + t.dataset.v),
+  go: (t) => go(t.dataset.h),
+  back: () => { if (history.length > 1) history.back(); else go('#/'); },
+  dismiss: (t) => { S.dismissed.add(t.dataset.k); renderAlerts(); },
+  quick: (t) => { if (!S.token) return needAuth('Sign in to see your shelf.', () => { closePanel(); S.shelfTab = t.dataset.tab; go('#/shelf'); }); S.shelfTab = t.dataset.tab; go('#/shelf'); },
+  toCatalog: () => { const t = $('#tools'); t && t.scrollIntoView(); },
+  mode: (t) => { S.mode = t.dataset.m; store.set('lib.mode', S.mode); renderView(); },
+  retry: () => loadCatalog(),
+  clearFilters: () => { S.q = ''; S.cat = 'all'; S.onlyAvail = false; renderView(); },
+  chip: (t) => { S.cat = t.dataset.c; renderView(); },
+  tab: (t) => { S.shelfTab = t.dataset.t; viewShelf(); },
+  openBook: (t, id) => { if (id != null) go('#/book/' + id); },
+  openCart, closePanel,
+  openAuth: (t) => openAuth(t.dataset.mode, S.panel && S.panel.note),
+  signOut: () => signOut(false),
+
+  borrow: (t, id) => {
+    if (!S.token) return needAuth('Sign in to borrow this book.', () => closePanel());
+    return run(t, async () => {
+      const r = await api('/api/borrows', { method: 'POST', body: { bookId: id } });
+      toast(`Borrowed. It's on your shelf now, due ${fmt(r.dueDate)}.`, null, { label: 'View shelf', h: '#/shelf' }); await afterChange(id);
+    });
+  },
+  reserve: (t, id) => {
+    if (!S.token) return needAuth('Sign in to reserve this book.', () => closePanel());
+    return run(t, async () => { await api('/api/reservations', { method: 'POST', body: { bookId: id } }); toast('Reserved. You\'re on the waitlist.'); await afterChange(id); });
+  },
+  addCart: (t, id) => {
+    const b = bookById(id), n = stockOf(id), it = S.cart.find(i => i.bookId === id);
+    if (it && n !== null && it.qty >= n) return toast(`Only ${n} in stock, and they're all in your cart.`, 'err');
+    it ? it.qty++ : S.cart.push({ bookId: id, qty: 1 });
+    saveCart(); renderTop(); renderQuick(); toast(`Added to cart: ${b.title}.`);
+  },
+  qty: (t, id) => {
+    const it = S.cart.find(i => i.bookId === id); if (!it) return;
+    const n = stockOf(id), next = it.qty + Number(t.dataset.d);
+    if (next < 1) return;
+    if (n !== null && next > n) return toast(`Only ${n} in stock.`, 'err');
+    it.qty = next; saveCart(); renderTop(); renderPanel();
+  },
+  rmCart: (t, id) => { S.cart = S.cart.filter(i => i.bookId !== id); saveCart(); renderTop(); renderQuick(); renderPanel(); },
+  checkout: (t) => {
+    if (!S.token) return needAuth('Sign in to place your order.', openCart);
+    return run(t, async () => {
+      const o = await api('/api/orders', { method: 'POST', body: { items: S.cart.map(i => ({ bookId: i.bookId, quantity: i.qty })) } });
+      S.cart = []; saveCart(); renderTop(); closePanel(); await refreshStock(); afterAccountChange();
+      toast(`Order placed. Total ${money(o.totalPrice)}.`);
+      renderView();
+    });
+  },
+  returnBook: (t, id) => run(t, async () => {
+    const col = $(`.col[data-b="${id}"]`); if (col) col.classList.add('leaving');
+    let r;
+    try { [r] = await Promise.all([api(`/api/borrows/${id}/return`, { method: 'PUT' }), new Promise(x => setTimeout(x, 380))]); }
+    catch (e) { if (col) col.classList.remove('leaving'); throw e; }
+    toast(r.fineAmount > 0 ? `Returned. Late fine: ${money(r.fineAmount)}.` : 'Returned. Thanks!');
+    await refreshStock(); afterAccountChange(); loadShelf();
+  }),
+  cancelRes: (t, id) => run(t, async () => { await api(`/api/reservations/${id}/cancel`, { method: 'PUT' }); toast('Reservation cancelled.'); afterAccountChange(); loadShelf(); }),
+  delReview: (t, id) => {
+    if (!confirm('Delete this review?')) return;
+    return run(t, async () => {
+      await api(`/api/reviews/${id}`, { method: 'DELETE' }); toast('Review deleted.');
+      S.shelf.loaded = false;
+      if (S.view === 'book') await reloadBp(S.bookId);
+      if (S.view === 'shelf') loadShelf();
+    });
+  },
+
+  /* admin */
+  admTab: (t) => { S.adminTab = t.dataset.t; S.adm.member = null; viewAdmin(); loadAdmin(S.adminTab); },
+  newBook: () => bookForm(null),
+  editBook: (t, id) => bookForm(bookById(id)),
+  delBook: (t, id) => {
+    const b = bookById(id); if (!b || !confirm(`Delete "${b.title}"? This can't be undone.`)) return;
+    return run(t, async () => { await api(`/api/books/${id}`, { method: 'DELETE' }); toast('Book deleted.'); if (S.view === 'book') go('#/'); await loadCatalog(); });
+  },
+  newCat: () => catForm(null),
+  editCat: (t, id) => catForm(S.cats.find(c => c.id === id)),
+  delCat: (t, id) => {
+    const c = S.cats.find(x => x.id === id); if (!c || !confirm(`Delete the category "${c.name}"?`)) return;
+    return run(t, async () => { await api(`/api/categories/${id}`, { method: 'DELETE' }); toast('Category deleted.'); await loadCatalog(); });
+  },
+  saveStock: (t, id) => run(t, async () => {
+    const v = Number(t.closest('tr').querySelector('input').value);
+    await api(`/api/inventory/${id}`, { method: 'PUT', body: { availableCopies: v } }); toast('Stock updated.'); await refreshStock(); renderAdminTable();
+  }),
+  addStock: (t, id) => run(t, async () => {
+    const v = Number(t.closest('tr').querySelector('input').value);
+    await api('/api/inventory', { method: 'POST', body: { bookId: id, availableCopies: v } }); toast('Stock record created.'); await refreshStock(); renderAdminTable();
+  }),
+  delStock: (t, id) => {
+    if (!confirm('Remove this stock record? The book can no longer be borrowed or bought.')) return;
+    return run(t, async () => { await api(`/api/inventory/${id}`, { method: 'DELETE' }); toast('Stock record removed.'); await refreshStock(); renderAdminTable(); });
+  },
+  member: (t, id) => lookupMember(id)
+};
+async function lookupMember(id) {
+  S.adm.memberErr = '';
+  try { S.adm.member = await api(`/api/users/${id}/activity-summary`); } catch (e) { S.adm.member = null; S.adm.memberErr = e.message; }
+  if (S.view === 'admin') renderAdminBody();
+}
+
+/* ---------- Events ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]'); if (!t) return;
+  const f = H[t.dataset.act]; if (!f) return;
+  f(t, t.dataset.id ? Number(t.dataset.id) : null);
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'q') { S.q = e.target.value; renderGrid(); }
+  if (e.target.id === 'aq') { S.admQ = e.target.value; renderAdminTable(); }
+  if (e.target.name === 'rating' && S.view === 'book') {
+    const v = Number(e.target.value);
+    e.target.closest('.rate').querySelectorAll('label').forEach((l, i) => l.classList.toggle('on', i < v));
+  }
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'avail') { S.onlyAvail = e.target.checked; renderGrid(); }
+  if (e.target.id === 'lf') { S.loanFilter = e.target.value; renderAdminTable(); }
+});
+document.addEventListener('mouseover', e => { const s = e.target.closest && e.target.closest('.spine'); if (s) showPeek(s); });
+document.addEventListener('mouseout', e => { const s = e.target.closest && e.target.closest('.spine'); if (s && !s.contains(e.relatedTarget)) hidePeek(); });
+document.addEventListener('focusin', e => { const s = e.target.closest && e.target.closest('.spine'); if (s) showPeek(s); });
+document.addEventListener('focusout', e => { if (e.target.closest && e.target.closest('.spine')) hidePeek(); });
+window.addEventListener('scroll', hidePeek, { passive: true });
+let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (S.view === 'catalog' && S.mode === 'shelves' && !S.loading) renderGrid(); }, 160); });
+document.addEventListener('submit', async e => {
+  const f = e.target; if (!f.dataset.form) return;
+  e.preventDefault();
+  const fd = new FormData(f), btn = f.querySelector('[type=submit]'), err = $('#formErr');
+  if (err) err.textContent = '';
+  const fail = m => { if (err) err.textContent = m; else toast(m, 'err'); };
+  const kind = f.dataset.form;
+  if (kind === 'auth') {
+    const mode = f.dataset.mode;
+    const body = mode === 'login' ? { email: fd.get('email').trim(), password: fd.get('password') }
+      : { fullName: fd.get('fullName').trim(), email: fd.get('email').trim(), password: fd.get('password') };
+    btn.disabled = true;
+    try { setSession(await api(`/api/auth/${mode}`, { method: 'POST', body, auth: false })); }
+    catch (x) { fail(x.message); btn.disabled = false; }
+  } else if (kind === 'review') {
+    const rating = Number(fd.get('rating')), id = Number(f.dataset.id), rid = f.dataset.rid;
+    if (!rating) return fail('Choose a rating from 1 to 5 stars.');
+    btn.disabled = true;
+    try {
+      const comment = (fd.get('comment') || '').trim();
+      if (rid) await api(`/api/reviews/${rid}`, { method: 'PUT', body: { rating, comment } });
+      else await api('/api/reviews', { method: 'POST', body: { bookId: id, rating, comment } });
+      toast(rid ? 'Review updated.' : 'Review posted.'); S.shelf.loaded = false;
+      await reloadBp(id);
+    } catch (x) { fail(x.message); btn.disabled = false; }
+  } else if (kind === 'admin') {
+    const p = S.panel, vals = {};
+    p.fields.forEach(fl => {
+      const raw = fd.get(fl.n);
+      vals[fl.n] = fl.type === 'number' ? (raw === '' || raw == null ? null : Number(raw)) : (raw == null ? null : (String(raw).trim() || null));
+    });
+    btn.disabled = true;
+    try { await p.onSubmit(vals); } catch (x) { fail(x.message); btn.disabled = false; }
+  } else if (kind === 'newadmin') {
+    btn.disabled = true;
+    try {
+      await api('/api/auth/admin/register', { method: 'POST', body: { fullName: fd.get('fullName').trim(), email: fd.get('email').trim(), password: fd.get('password') } });
+      toast('Admin account created.'); f.reset();
+    } catch (x) { fail(x.message); }
+    btn.disabled = false;
+  } else if (kind === 'member') {
+    await lookupMember(Number(fd.get('id')));
+  }
+});
+document.addEventListener('keydown', e => {
+  const open = $('#panel').classList.contains('on');
+  if (!open) return;
+  if (e.key === 'Escape') return closePanel();
+  if (e.key === 'Tab') {
+    const els = [...$('#panel').querySelectorAll('button:not(:disabled),input:not([type=radio]),input[type=radio]:checked,textarea,select,a[href]')].filter(x => x.offsetParent !== null);
+    if (!els.length) return;
+    const first = els[0], last = els[els.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+
+/* ---------- Start ---------- */
+renderTop(); route(); loadCatalog(); loadAccount();
+</script>
+</body>
+</html>
